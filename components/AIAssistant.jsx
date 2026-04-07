@@ -160,7 +160,7 @@ export default function AIAssistant() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-white font-semibold text-sm">Asisten AI Jokitugasku</div>
-                <div className="text-white/70 text-xs">Powered by Google Gemini</div>
+                <div className="text-white/70 text-xs">Asisten AI Pintar</div>
               </div>
               <div className="flex items-center gap-1.5 text-xs text-white/80">
                 <span className="w-2 h-2 bg-green-300 rounded-full animate-pulse" />
