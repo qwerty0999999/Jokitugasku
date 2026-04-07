@@ -40,7 +40,11 @@ CREATE POLICY "Publik bisa buat order baru"
 CREATE POLICY "Admin full access"
   ON orders FOR ALL
   TO authenticated
-  USING (true);
+  USING (
+    auth.jwt() ->> 'email' = (SELECT current_setting('app.settings.super_admin_email', true))
+    OR 
+    (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
+  );
 
 -- 4. Aktifkan Realtime
 ALTER PUBLICATION supabase_realtime ADD TABLE orders;
@@ -66,7 +70,12 @@ ALTER TABLE ratings ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Semua bisa baca rating" ON ratings FOR SELECT USING (true);
 CREATE POLICY "Semua bisa insert rating" ON ratings FOR INSERT WITH CHECK (true);
-CREATE POLICY "Admin full access ratings" ON ratings FOR ALL TO authenticated USING (true);
+CREATE POLICY "Admin full access"
+  ON ratings FOR ALL
+  TO authenticated
+  USING (
+    (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
+  );
 
 -- 7. Aktifkan Realtime ratings
 ALTER PUBLICATION supabase_realtime ADD TABLE ratings;
@@ -112,5 +121,10 @@ CREATE INDEX IF NOT EXISTS idx_progress_log_order_code ON progress_log (order_co
 ALTER TABLE progress_log ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Semua bisa baca progress_log" ON progress_log FOR SELECT USING (true);
-CREATE POLICY "Admin full access progress_log" ON progress_log FOR ALL TO authenticated USING (true);
+CREATE POLICY "Admin full access"
+  ON progress_log FOR ALL
+  TO authenticated
+  USING (
+    (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
+  );
 ALTER PUBLICATION supabase_realtime ADD TABLE progress_log;

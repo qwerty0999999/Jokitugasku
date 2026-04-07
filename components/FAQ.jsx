@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronDown, HelpCircle } from 'lucide-react'
+import { ChevronDown, HelpCircle, MessageCircle } from 'lucide-react'
 
 const faqs = [
   {
@@ -46,27 +46,31 @@ function FAQItem({ item, isOpen, onToggle }) {
   return (
     <motion.div
       layout
-      className={`border-2 rounded-2xl overflow-hidden transition-colors duration-300 ${
-        isOpen ? 'border-blue-200 bg-blue-50/50' : 'border-gray-100 bg-white hover:border-gray-200'
+      className={`rounded-2xl border-2 overflow-hidden transition-all duration-300 ${
+        isOpen
+          ? 'border-blue-200 bg-blue-50/40 shadow-sm'
+          : 'border-slate-100 bg-white hover:border-slate-200 hover:shadow-sm'
       }`}
     >
       <button
         id={item.id}
         onClick={onToggle}
-        className="w-full text-left px-6 py-5 flex items-center justify-between gap-4"
+        className="w-full text-left px-6 py-5 flex items-center justify-between gap-4 group"
         aria-expanded={isOpen}
       >
-        <span className={`font-semibold text-base ${isOpen ? 'text-blue-700' : 'text-gray-900'}`}>
+        <span className={`font-bold text-base leading-snug transition-colors duration-200 ${
+          isOpen ? 'text-blue-700' : 'text-slate-800 group-hover:text-slate-900'
+        }`}>
           {item.q}
         </span>
         <motion.div
           animate={{ rotate: isOpen ? 180 : 0 }}
           transition={{ duration: 0.25 }}
-          className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-            isOpen ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'
+          className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors duration-200 ${
+            isOpen ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200'
           }`}
         >
-          <ChevronDown size={18} />
+          <ChevronDown size={17} strokeWidth={2.5} />
         </motion.div>
       </button>
 
@@ -76,9 +80,9 @@ function FAQItem({ item, isOpen, onToggle }) {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease: 'easeInOut' }}
+            transition={{ duration: 0.28, ease: 'easeInOut' }}
           >
-            <div className="px-6 pb-5 text-gray-600 leading-relaxed text-sm border-t border-blue-100 pt-4">
+            <div className="px-6 pb-6 text-slate-600 leading-relaxed text-sm border-t border-blue-100/60 pt-4">
               {item.a}
             </div>
           </motion.div>
@@ -94,24 +98,31 @@ export default function FAQ() {
   const toggle = (id) => setOpenId(prev => prev === id ? null : id)
 
   return (
-    <section id="faq" className="py-24 bg-white relative overflow-hidden">
+    <section id="faq" className="py-28 bg-white relative overflow-hidden">
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-100 to-transparent" />
 
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Background decoration */}
+      <div className="absolute top-20 right-0 w-72 h-72 bg-blue-50 rounded-full blur-3xl opacity-40 pointer-events-none" />
+      <div className="absolute bottom-20 left-0 w-64 h-64 bg-slate-50 rounded-full blur-3xl opacity-60 pointer-events-none" />
+
+      <div className="relative max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.65 }}
           className="text-center mb-14"
         >
-          <span className="section-badge">
-            <HelpCircle size={14} />
+          <span className="section-badge mb-5">
+            <HelpCircle size={13} />
             FAQ
           </span>
-          <h2 className="section-title">Pertanyaan yang Sering Ditanyakan</h2>
-          <p className="section-sub">
+          <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight mt-4 mb-4">
+            Pertanyaan yang{' '}
+            <span className="text-gradient">Sering Ditanyakan</span>
+          </h2>
+          <p className="text-slate-500 text-lg">
             Masih bingung? Temukan jawaban dari pertanyaan umum berikut.
           </p>
         </motion.div>
@@ -134,24 +145,31 @@ export default function FAQ() {
           ))}
         </motion.div>
 
-        {/* CTA */}
+        {/* CTA Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 0.3 }}
-          className="mt-10 text-center"
+          className="mt-10 p-7 rounded-3xl bg-gradient-to-br from-slate-900 to-slate-800 text-white text-center relative overflow-hidden"
         >
-          <p className="text-gray-500 mb-4">Tidak menemukan jawaban yang kamu cari?</p>
-          <a
-            href="https://wa.me/6281234567890?text=Halo%20Jokitugasku%21%20Saya%20punya%20pertanyaan."
-            target="_blank"
-            rel="noopener noreferrer"
-            id="faq-wa-btn"
-            className="btn-primary inline-flex"
-          >
-            💬 Tanya Langsung via WhatsApp
-          </a>
+          {/* Glow */}
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-transparent pointer-events-none" />
+          <div className="relative">
+            <div className="text-3xl mb-3">💬</div>
+            <h3 className="font-black text-lg mb-2">Tidak menemukan jawaban yang kamu cari?</h3>
+            <p className="text-slate-400 text-sm mb-5">Tim kami siap membantu kamu 24/7 via WhatsApp</p>
+            <a
+              href="https://wa.me/6289524894059?text=Halo%20Jokitugasku%21%20Saya%20punya%20pertanyaan."
+              target="_blank"
+              rel="noopener noreferrer"
+              id="faq-wa-btn"
+              className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-2xl font-bold text-sm bg-white text-slate-900 hover:bg-blue-50 hover:-translate-y-0.5 transition-all duration-300 shadow-lg shadow-black/20"
+            >
+              <MessageCircle size={17} />
+              Tanya Langsung via WhatsApp
+            </a>
+          </div>
         </motion.div>
       </div>
     </section>

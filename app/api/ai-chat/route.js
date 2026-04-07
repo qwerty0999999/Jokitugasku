@@ -29,12 +29,12 @@ const getFallbackResponse = (userMsg) => {
 
 export async function POST(req) {
   const { messages } = await req.json()
-  const lastMsg = messages[messages.length - 1]
 
   try {
     const apiKey = process.env.GEMINI_API_KEY
     if (!apiKey) {
       // Return fallback as a non-streaming response
+      const lastMsg = messages[messages.length - 1]
       return new Response(getFallbackResponse(lastMsg.content), {
         headers: { 'Content-Type': 'text/plain; charset=utf-8' },
       })

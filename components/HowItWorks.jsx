@@ -12,18 +12,24 @@ const steps = [
     color: 'bg-blue-500',
     textAccent: 'text-blue-600',
     bgLight: 'bg-blue-50',
-    border: 'border-blue-100',
+    border: 'border-blue-200',
+    ring: 'ring-blue-100',
+    connectorColor: 'from-blue-300',
+    numberBg: 'bg-blue-100 text-blue-700',
   },
   {
     id: 'step-2',
     number: '02',
     icon: '💬',
     title: 'Diskusi Harga',
-    desc: 'Kami akan konfirmasi harga yang fair sesuai kesulitan dan deadline tugasmu.',
+    desc: 'Kami konfirmasi harga yang fair sesuai kesulitan dan deadline tugasmu.',
     color: 'bg-violet-500',
     textAccent: 'text-violet-600',
     bgLight: 'bg-violet-50',
-    border: 'border-violet-100',
+    border: 'border-violet-200',
+    ring: 'ring-violet-100',
+    connectorColor: 'from-violet-300',
+    numberBg: 'bg-violet-100 text-violet-700',
   },
   {
     id: 'step-3',
@@ -34,7 +40,10 @@ const steps = [
     color: 'bg-cyan-500',
     textAccent: 'text-cyan-600',
     bgLight: 'bg-cyan-50',
-    border: 'border-cyan-100',
+    border: 'border-cyan-200',
+    ring: 'ring-cyan-100',
+    connectorColor: 'from-cyan-300',
+    numberBg: 'bg-cyan-100 text-cyan-700',
   },
   {
     id: 'step-4',
@@ -45,14 +54,20 @@ const steps = [
     color: 'bg-emerald-500',
     textAccent: 'text-emerald-600',
     bgLight: 'bg-emerald-50',
-    border: 'border-emerald-100',
+    border: 'border-emerald-200',
+    ring: 'ring-emerald-100',
+    connectorColor: '',
+    numberBg: 'bg-emerald-100 text-emerald-700',
   },
 ]
 
 export default function HowItWorks() {
   return (
-    <section id="how-it-works" className="py-24 bg-white relative overflow-hidden">
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-100 to-transparent" />
+    <section id="how-it-works" className="py-28 bg-white relative overflow-hidden">
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+      
+      {/* Background shapes */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-blue-50/40 rounded-full blur-3xl pointer-events-none" />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
@@ -60,19 +75,21 @@ export default function HowItWorks() {
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          transition={{ duration: 0.65 }}
+          className="text-center mb-20"
         >
-          <span className="section-badge">Cara Kerja</span>
-          <h2 className="section-title">Proses Mudah & Transparan</h2>
-          <p className="section-sub">Cukup 4 langkah simpel untuk mendapatkan bantuan terbaik.</p>
+          <span className="section-badge mb-5">Cara Kerja</span>
+          <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight mt-4 mb-4">
+            Proses Mudah &{' '}
+            <span className="text-gradient">Transparan</span>
+          </h2>
+          <p className="text-slate-500 text-lg max-w-lg mx-auto leading-relaxed">
+            Cukup 4 langkah simpel untuk mendapatkan bantuan terbaik dari kami.
+          </p>
         </motion.div>
 
         {/* Steps */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 relative">
-          {/* Connector line (desktop) */}
-          <div className="hidden lg:block absolute top-10 left-[calc(12.5%+2rem)] right-[calc(12.5%+2rem)] h-0.5 bg-gradient-to-r from-blue-200 via-violet-200 to-emerald-200 pointer-events-none" />
-
           {steps.map((step, i) => (
             <motion.div
               key={step.id}
@@ -81,19 +98,55 @@ export default function HowItWorks() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-60px' }}
               transition={{ duration: 0.6, delay: i * 0.15 }}
-              className="flex flex-col items-center text-center relative"
+              className="group relative flex flex-col items-center text-center"
             >
-              {/* Icon circle */}
-              <div className={`relative w-20 h-20 rounded-2xl ${step.bgLight} border-2 ${step.border} flex flex-col items-center justify-center mb-6 z-10 shadow-sm`}>
-                <div className="text-3xl leading-none">{step.icon}</div>
-                <div className={`${step.textAccent} text-xs font-bold mt-0.5`}>{step.number}</div>
+              {/* Connector line (desktop) */}
+              {i < steps.length - 1 && (
+                <div
+                  className={`hidden lg:block absolute top-10 left-[calc(50%+2.5rem)] right-[calc(-50%+2.5rem)] h-0.5 bg-gradient-to-r ${step.connectorColor} to-transparent pointer-events-none`}
+                  aria-hidden="true"
+                />
+              )}
+
+              {/* Step number badge */}
+              <div className={`absolute -top-2.5 left-1/2 -translate-x-1/2 sm:static sm:translate-x-0 sm:mb-0 z-10`}>
+                <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-black ${step.numberBg} mb-3`}>
+                  {step.number}
+                </span>
               </div>
 
-              <h3 className="font-display font-bold text-gray-900 text-lg mb-2">{step.title}</h3>
-              <p className="text-gray-500 text-sm leading-relaxed max-w-[200px]">{step.desc}</p>
+              {/* Icon circle - Premium look */}
+              <motion.div
+                whileHover={{ scale: 1.12, rotate: 5 }}
+                transition={{ type: 'spring', stiffness: 280, damping: 18 }}
+                className={`relative w-24 h-24 rounded-3xl ${step.bgLight} border-2 ${step.border} ring-4 ${step.ring} flex flex-col items-center justify-center mb-7 z-10 shadow-sm group-hover:shadow-md transition-shadow duration-300`}
+              >
+                <div className="text-4xl leading-none">{step.icon}</div>
+              </motion.div>
+
+              <h3 className={`font-display font-bold text-slate-900 text-lg mb-2.5 group-hover:${step.textAccent} transition-colors duration-200`}>
+                {step.title}
+              </h3>
+              <p className="text-slate-500 text-sm leading-relaxed max-w-[200px]">{step.desc}</p>
             </motion.div>
           ))}
         </div>
+
+        {/* Bottom CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+          className="text-center mt-16"
+        >
+          <a
+            href="#order-form"
+            className="btn-primary inline-flex"
+          >
+            Mulai Sekarang →
+          </a>
+        </motion.div>
       </div>
     </section>
   )

@@ -11,8 +11,13 @@ async function checkIsSuperAdmin(req) {
   if (!authHeader) return false
   const token = authHeader.replace('Bearer ', '')
   const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
+  
   if (error || !user) return false
-  return user.email === process.env.SUPER_ADMIN_EMAIL
+
+  const isSuperAdminEmail = user.email === process.env.SUPER_ADMIN_EMAIL
+  const hasAdminRole = user.app_metadata?.role === 'admin'
+
+  return isSuperAdminEmail || hasAdminRole
 }
 
 export async function GET(req) {

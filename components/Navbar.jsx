@@ -39,28 +39,30 @@ export default function Navbar() {
       return
     }
 
-    const sections = navLinks.map(link => document.querySelector(link.href)).filter(Boolean)
-    
-    const handleObserver = (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
-          setActiveSection(`#${entry.target.id}`)
+    const NAV_HEIGHT = 88
+
+    const getActiveSection = () => {
+      const scrollY = window.scrollY + NAV_HEIGHT + 40
+
+      // Cek dari bawah ke atas supaya section yang paling dekat viewport dipilih
+      const sectionIds = navLinks.map(l => l.href) // e.g. '#services'
+      let current = ''
+
+      for (const href of sectionIds) {
+        const el = document.querySelector(href)
+        if (el && el.offsetTop <= scrollY) {
+          current = href
         }
-      })
+      }
+
+      setActiveSection(current)
     }
 
-    const observer = new IntersectionObserver(handleObserver, {
-      rootMargin: '-80px 0px -50% 0px',
-      threshold: [0, 0.5, 1]
-    })
+    // Run once on mount
+    getActiveSection()
 
-    sections.forEach((s) => observer.observe(s))
-    
-    // Khusus untuk Hero (Top of page)
-    const hero = document.querySelector('#hero')
-    if (hero) observer.observe(hero)
-
-    return () => observer.disconnect()
+    window.addEventListener('scroll', getActiveSection, { passive: true })
+    return () => window.removeEventListener('scroll', getActiveSection)
   }, [pathname])
 
   const scrollTo = (e, href) => {
