@@ -896,7 +896,7 @@ function PersonalSettings({ session, onRefresh, isSuperAdmin, stats }) {
             <Shield className="text-rose-600" size={24} />
             <h3 className="text-xl font-black text-rose-900">Database Maintenance</h3>
           </div>
-          <p className="text-sm text-rose-700 mb-6">Pembersihan data akan menghapus semua tiket yang telah berstatus "Selesai". Tindakan ini tidak dapat dibatalkan.</p>
+          <p className="text-sm text-rose-700 mb-6">Pembersihan data akan menghapus semua tiket yang telah berstatus &quot;Selesai&quot;. Tindakan ini tidak dapat dibatalkan.</p>
           <button 
             onClick={async () => { 
               if (!window.confirm('Yakin ingin menghapus semua data selesai?')) return
