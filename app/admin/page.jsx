@@ -1304,7 +1304,7 @@ export default function AdminPage() {
               <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
                 <div className="flex items-center gap-4">
                   <div className="w-11 h-11 bg-white border border-slate-200 rounded-xl flex items-center justify-center shadow-sm">
-                    <img src="/favicon.ico" className="w-7 h-7 object-contain" alt="logo" />
+                    <Image src="/favicon.ico" width={28} height={28} className="w-7 h-7 object-contain" alt="logo" />
                   </div>
                   <div>
                     <h1 className="font-black text-lg text-slate-900 leading-none">Admin Core</h1>

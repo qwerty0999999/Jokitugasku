@@ -5,17 +5,23 @@
 :root {
   --foreground-rgb: 15, 23, 42;
   --background-rgb: 255, 255, 255;
+  
+  /* Font Variables for CLS Optimization */
+  --font-jakarta: var(--font-jakarta-sans);
+  --font-poppins: var(--font-poppins-sans);
 }
 
 @layer base {
   html {
     @apply antialiased scroll-smooth;
+    font-family: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
   body {
-    @apply bg-slate-50 text-slate-900 font-sans selection:bg-blue-200 selection:text-blue-900;
+    @apply bg-slate-50 text-slate-900 selection:bg-blue-200 selection:text-blue-900;
+    font-family: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }

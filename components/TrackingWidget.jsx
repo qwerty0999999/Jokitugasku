@@ -181,7 +181,7 @@ export default function TrackingWidget({ initialCode = '' }) {
     try {
       const { data, error: sbError } = await supabase
         .from('orders')
-        .select('*')
+        .select('id, order_code, service, client_name, status, progress, deadline, notes')
         .eq('order_code', trimmed)
         .single()
 
