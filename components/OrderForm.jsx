@@ -6,7 +6,7 @@ import { Send, AlertCircle, CheckCircle, Copy, Check, ExternalLink, ClipboardLis
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 
-const WA_NUMBER = '6281234567890'
+const WA_NUMBER = '6289524894059'
 
 const serviceOptions = [
   { value: 'Joki Tugas (Resume/Laporan)', label: '📄 Joki Tugas (Resume/Laporan)' },

@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { ArrowRight, MessageCircle, ShieldCheck, Clock, Star } from 'lucide-react'
 
-const WA_NUMBER = '6281234567890'
+const WA_NUMBER = '6289524894059'
 
 function useCountUp(target, duration = 1800, start = false) {
   const [count, setCount] = useState(0)

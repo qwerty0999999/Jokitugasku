@@ -116,7 +116,7 @@ export default function AIAssistant() {
           {!open && (
             <>
               <span className="absolute inset-0 rounded-full bg-indigo-500 animate-ping opacity-20" />
-              <span className="absolute inset-0 rounded-full bg-blue-500 animate-ping opacity-10 delay-300" />
+              <span className="absolute inset-0 rounded-full bg-blue-500 animate-ping opacity-10" style={{ animationDelay: '300ms' }} />
             </>
           )}
 

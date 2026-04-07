@@ -37,6 +37,12 @@ const statusConfig = {
     icon: CheckCircle2,
     step: 4,
   },
+  revisi: {
+    label: 'Dalam Revisi',
+    color: 'text-orange-700 bg-orange-50 border-orange-200',
+    icon: RotateCcw,
+    step: 3,
+  },
 }
 
 const steps = [

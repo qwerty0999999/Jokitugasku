@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 
-const WA_NUMBER = '6281234567890'
+const WA_NUMBER = '6289524894059'
 
 export default function CTA() {
   return (

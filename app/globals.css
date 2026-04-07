@@ -7,8 +7,8 @@
   --background-rgb: 255, 255, 255;
   
   /* Font Variables for CLS Optimization */
-  --font-jakarta: var(--font-jakarta-sans);
-  --font-poppins: var(--font-poppins-sans);
+  --font-jakarta: var(--font-plus-jakarta);
+  --font-poppins: var(--font-poppins);
 }
 
 @layer base {

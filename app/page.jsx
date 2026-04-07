@@ -8,7 +8,6 @@ import OrderForm from '@/components/OrderForm'
 import FAQ from '@/components/FAQ'
 import CTA from '@/components/CTA'
 import Footer from '@/components/Footer'
-import AIAssistant from '@/components/AIAssistant'
 
 export default function HomePage() {
   return (
@@ -23,7 +22,6 @@ export default function HomePage() {
       <FAQ />
       <CTA />
       <Footer />
-      <AIAssistant />
     </>
   )
 }

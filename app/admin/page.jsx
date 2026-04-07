@@ -437,7 +437,7 @@ function OrderCard({ order, onSave, currentAdminEmail, isSuperAdmin }) {
 
     switch (up.status) {
       case 'confirmed': 
-        msg = `*KONFIRMASI PESANAN - JOKITUGASKU*\n----------------------------------\n*No. Tiket:* ${order.order_code}\n*Layanan:* ${order.service}\n*Total Biaya:* ${harga}\n----------------------------------\nHalo ${order.client_name}, pesanan diverifikasi. Mohon bayar *DP 50% (${dp})* ke:\n\n*BCA: 1234567890*\n*DANA: 089524894059*\n\nTerima kasih!`; 
+        msg = `*KONFIRMASI PESANAN - JOKITUGASKU*\n----------------------------------\n*No. Tiket:* ${order.order_code}\n*Layanan:* ${order.service}\n*Total Biaya:* ${harga}\n----------------------------------\nHalo ${order.client_name}, pesanan diverifikasi. Mohon bayar *DP 50% (${dp})* ke:\n\n*BCA: 1234567890*\n*DANA: +62 895-2489-4059*\n\nTerima kasih!`; 
         break
       case 'in_progress': 
         msg = `*PESANAN DIPROSES*\n----------------------------------\nHalo ${order.client_name}, pembayaran DP diterima. Tiket *${order.order_code}* mulai dikerjakan oleh tim. Mohon ditunggu ya.`; 
@@ -541,7 +541,7 @@ function OrderCard({ order, onSave, currentAdminEmail, isSuperAdmin }) {
             </div>
           </div>
           {order.deadline && (
-            <div className="flex flex-col items-end gap-1 hidden md:flex">
+            <div className="hidden md:flex flex-col items-end gap-1">
               <div className="text-[10px] font-bold text-rose-400 uppercase tracking-wider">Deadline</div>
               <div className="text-xs font-bold text-rose-600 bg-rose-50 px-2 py-1 rounded-md border border-rose-100">
                 {formatDate(order.deadline)}
@@ -664,7 +664,7 @@ function RatingCard({ r, onRefresh }) {
         <div className="flex items-center gap-1 mb-4">
           {[1,2,3,4,5].map(i => <Star key={i} size={18} className={i <= r.stars ? 'fill-amber-400 text-amber-400' : 'text-slate-200'} />)}
         </div>
-        <p className="text-sm font-medium text-slate-700 italic mb-6 line-clamp-4">"{r.comment || 'Tanpa komentar.'}"</p>
+        <p className="text-sm font-medium text-slate-700 italic mb-6 line-clamp-4">&quot;{r.comment || 'Tanpa komentar.'}&quot;</p>
       </div>
       <div className="flex items-center gap-3 pt-4 border-t border-slate-100">
         <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center font-bold text-lg">

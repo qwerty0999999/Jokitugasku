@@ -1,6 +1,6 @@
 import Image from 'next/image'
 
-const WA_NUMBER = '6281234567890'
+const WA_NUMBER = '6289524894059'
 
 const footerLinks = {
   layanan: [
@@ -20,7 +20,7 @@ const footerLinks = {
 }
 
 const contactItems = [
-  { icon: '💬', text: `WhatsApp: 0812-3456-7890` },
+  { icon: '💬', text: 'WhatsApp: +62 895-2489-4059' },
   { icon: '✈️', text: 'Telegram: @jokitugasku' },
   { icon: '📧', text: 'info@jokitugasku.id' },
   { icon: '⏰', text: 'Senin–Minggu, 07.00–23.00' },
@@ -117,12 +117,12 @@ export default function Footer() {
         {/* Bottom */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-gray-600 text-sm">
-            © 2024 Jokitugasku by RF Digital. All rights reserved.
+            © {new Date().getFullYear()} Jokitugasku by RF Digital. All rights reserved.
           </p>
           <div className="flex items-center gap-6">
-            {['Privacy Policy', 'Terms & Conditions', 'FAQ'].map((link) => (
-              <a key={link} href="#" className="text-gray-600 hover:text-gray-400 text-xs transition-colors duration-200">
-                {link}
+            {[{ label: 'Privacy Policy', href: '#' }, { label: 'Terms & Conditions', href: '#' }, { label: 'FAQ', href: '#faq' }].map((link) => (
+              <a key={link.label} href={link.href} className="text-gray-600 hover:text-gray-400 text-xs transition-colors duration-200">
+                {link.label}
               </a>
             ))}
           </div>
