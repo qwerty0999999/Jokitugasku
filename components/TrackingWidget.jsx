@@ -392,7 +392,7 @@ export default function TrackingWidget({ initialCode = '' }) {
                   {existingRating ? (
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 text-xs sm:text-sm">
                       {renderStars(existingRating.stars)}
-                      <span className="text-gray-500 italic">"Ulasanmu sudah diterima — terima kasih!" 🙏</span>
+                      <span className="text-gray-500 italic">&quot;Ulasanmu sudah diterima — terima kasih!&quot; 🙏</span>
                     </div>
                   ) : (
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

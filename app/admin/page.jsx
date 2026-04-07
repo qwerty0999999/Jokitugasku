@@ -148,7 +148,7 @@ function LoginForm({ onLogin, onLoginStart }) {
               } : {}}
               className="bg-white rounded-3xl p-5 w-24 h-24 shadow-2xl flex items-center justify-center relative overflow-hidden"
             >
-              <img src="/logo.png" alt="Logo" className="w-full h-full object-contain relative z-10" />
+              <Image src="/logo.png" alt="Logo" width={96} height={96} className="w-full h-full object-contain relative z-10" />
               
               <AnimatePresence>
                 {loginSuccess && (
@@ -1338,5 +1338,7 @@ export default function AdminPage() {
         )}
       </AnimatePresence>
     </div>
+  )
+}
   )
 }
