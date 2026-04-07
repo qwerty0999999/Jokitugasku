@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import Image from 'next/image'
 import {
   LogIn, LogOut, RefreshCw, CheckCircle, Clock, Loader2,
   RotateCcw, Search, ChevronDown, Save, Star, TrendingUp,
@@ -1338,7 +1339,5 @@ export default function AdminPage() {
         )}
       </AnimatePresence>
     </div>
-  )
-}
   )
 }
