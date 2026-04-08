@@ -24,23 +24,29 @@ export async function POST(req) {
 
     // LOGIC: Menentukan pesan berdasarkan tipe (Default ke NEW_ORDER jika type kosong)
     if (type === 'CLAIM_ORDER') {
-      message = `*✅ PESANAN DIAMBIL*
-----------------------------------
-*Admin:* ${adminName || 'Admin'}
-*Telah mengambil tiket:* ${orderData.order_code} (${orderData.service})
-----------------------------------
-Status tiket kini: *${(orderData.status || 'PROSES').toUpperCase()}*
-Semangat pengerjaannya! 💪✨`
+      message = `*✅ TIKET TELAH DIAMBIL*
+━━━━━━━━━━━━━━━━━━
+👤 *Admin:* ${adminName || 'Admin'}
+🎫 *Tiket:* ${orderData.order_code}
+🛠️ *Layanan:* ${orderData.service}
+━━━━━━━━━━━━━━━━━━
+🚀 *Status:* ${(orderData.status || 'PROSES').toUpperCase()}
+
+_Semangat pengerjaannya! Fokus berikan hasil terbaik untuk klien. 💪✨_`
     } else {
       // DEFAULT: NEW_ORDER
       message = `*🔔 PESANAN BARU MASUK!*
-----------------------------------
-*Kode Order:* ${orderData.order_code}
-*Layanan:* ${orderData.service}
-*Nama Klien:* ${orderData.client_name}
-*Deadline:* ${orderData.deadline || 'Tidak ada'}
-----------------------------------
-Silakan admin segera proses di Dashboard! 🚀`
+━━━━━━━━━━━━━━━━━━
+🎫 *Kode:* ${orderData.order_code}
+👤 *Klien:* ${orderData.client_name}
+🛠️ *Layanan:* ${orderData.service}
+⏰ *Deadline:* ${orderData.deadline || 'Flexible'}
+━━━━━━━━━━━━━━━━━━
+
+🔥 *Segera proses di Dashboard:*
+🔗 https://jokitugasku.vercel.app/admin
+
+_Harap segera dikonfirmasi agar klien tidak menunggu lama. 🚀_`
     }
 
     const formData = new FormData()
