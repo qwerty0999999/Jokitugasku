@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
+import { Toaster, toast } from 'sonner'
 import {
   LogIn, LogOut, RefreshCw, CheckCircle, Clock, Loader2,
   RotateCcw, Search, ChevronDown, Save, Star, TrendingUp,
@@ -424,7 +425,7 @@ function OrderCard({ order, onSave, currentAdminEmail, isSuperAdmin }) {
 
     const { error } = await supabase.from('orders').update(up).eq('order_code', order.order_code)
     if (error) {
-      alert(error.message)
+      toast.error(error.message)
       setLoading(false)
       return
     }
@@ -465,8 +466,13 @@ function OrderCard({ order, onSave, currentAdminEmail, isSuperAdmin }) {
     if (!isSuperAdmin) {
       setShowOtpModal(true)
     } else {
-      if (!window.confirm('Hapus tiket ini secara permanen?')) return
-      executeDelete()
+      toast.warning('Hapus tiket ini secara permanen?', {
+        action: {
+          label: 'Ya, Hapus',
+          onClick: () => executeDelete()
+        },
+        cancel: { label: 'Batal' }
+      })
     }
   }
 
@@ -474,14 +480,14 @@ function OrderCard({ order, onSave, currentAdminEmail, isSuperAdmin }) {
     const correctOtp = generateSecureOTP()
 
     if (inputOtp !== correctOtp) {
-      alert('OTP SALAH! OTP berubah setiap menit. Minta yang terbaru ke Owner.')
+      toast.error('OTP SALAH! OTP berubah setiap menit. Minta yang terbaru ke Owner.')
       return
     }
 
     setLoading(true)
     const { data: alreadyUsed } = await supabase.from('used_pins').select('pin').eq('pin', inputOtp).single()
     if (alreadyUsed) {
-      alert('OTP SUDAH KADALUWARSA!')
+      toast.error('OTP SUDAH KADALUWARSA!')
       setLoading(false)
       return
     }
@@ -494,8 +500,11 @@ function OrderCard({ order, onSave, currentAdminEmail, isSuperAdmin }) {
   const executeDelete = async () => {
     setLoading(true)
     const { error } = await supabase.from('orders').delete().eq('order_code', order.order_code)
-    if (!error) onSave()
-    else alert('Gagal hapus.')
+    if (!error) {
+      toast.success('Tiket berhasil dihapus')
+      onSave()
+    }
+    else toast.error('Gagal hapus.')
     setLoading(false)
   }
 
@@ -637,7 +646,19 @@ function RevisionCard({ rev, onRefresh, currentAdminEmail }) {
             <div className="text-xs font-black text-orange-500 uppercase">Menunggu Revisi</div>
           </div>
         </div>
-        <button onClick={async () => { if (!window.confirm('Hapus?')) return; await supabase.from('revisions').delete().eq('id', rev.id); onRefresh() }} className="text-slate-300 hover:text-rose-500 transition-colors bg-slate-50 p-2 rounded-lg">
+        <button onClick={() => {
+          toast.warning('Hapus permintaan revisi?', {
+            action: {
+              label: 'Ya, Hapus',
+              onClick: async () => {
+                await supabase.from('revisions').delete().eq('id', rev.id)
+                toast.success('Revisi dihapus')
+                onRefresh()
+              }
+            },
+            cancel: { label: 'Batal' }
+          })
+        }} className="text-slate-300 hover:text-rose-500 transition-colors bg-slate-50 p-2 rounded-lg">
           <X size={16} />
         </button>
       </div>
@@ -658,7 +679,19 @@ function RevisionCard({ rev, onRefresh, currentAdminEmail }) {
 function RatingCard({ r, onRefresh }) {
   return (
     <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm relative group hover:shadow-lg transition-all flex flex-col justify-between">
-      <button onClick={async () => { if (!window.confirm('Hapus?')) return; await supabase.from('ratings').delete().eq('id', r.id); onRefresh() }} className="absolute top-4 right-4 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all bg-slate-50 p-2 rounded-lg">
+      <button onClick={() => {
+        toast.warning('Hapus ulasan ini?', {
+          action: {
+            label: 'Ya, Hapus',
+            onClick: async () => {
+              await supabase.from('ratings').delete().eq('id', r.id)
+              toast.success('Ulasan dihapus')
+              onRefresh()
+            }
+          },
+          cancel: { label: 'Batal' }
+        })
+      }} className="absolute top-4 right-4 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all bg-slate-50 p-2 rounded-lg">
         <X size={16} />
       </button>
       <div>
@@ -706,7 +739,7 @@ function AdminManagement() {
     let payload = { action: modalMode === 'create' ? 'create' : 'update-user', userId: targetId }
     
     if (modalMode === 'create') { 
-      if (!form.email || !form.password) return alert('Lengkapi!')
+      if (!form.email || !form.password) return toast.error('Lengkapi data email & password!')
       payload = { ...form, action: 'create' } 
     } else { 
       payload = { ...form, action: 'update-user', userId: targetId }
@@ -718,14 +751,14 @@ function AdminManagement() {
     try { 
       const res = await fetch('/api/admin/manage-users', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${s?.access_token}` }, body: JSON.stringify(payload) })
       const data = await res.json()
-      if (data.error) alert(data.error)
+      if (data.error) toast.error(data.error)
       else { 
-        alert(data.message)
+        toast.success(data.message)
         setIsModalOpen(false)
         setForm({ email: '', password: '', name: '' })
         fetchAdmins() 
       } 
-    } catch (e) { alert("Error") } 
+    } catch (e) { toast.error("Terjadi kesalahan sistem") } 
     setLoading(false) 
   }
 
@@ -775,7 +808,30 @@ function AdminManagement() {
                   <Edit3 size={18} />
                 </button>
                 {a.email !== process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL && (
-                  <button onClick={async () => { if (!window.confirm(`Hapus ${a.email}?`)) return; setLoading(true); const { data: { session: s } } = await supabase.auth.getSession(); await fetch('/api/admin/manage-users', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${s?.access_token}` }, body: JSON.stringify({ action: 'delete', userId: a.id }) }); fetchAdmins(); setLoading(false) }} className="p-2.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all rounded-lg">
+                  <button onClick={() => {
+                    toast.warning(`Hapus admin ${a.email}?`, {
+                      action: {
+                        label: 'Ya, Hapus',
+                        onClick: async () => {
+                          setLoading(true)
+                          const { data: { session: s } } = await supabase.auth.getSession()
+                          const res = await fetch('/api/admin/manage-users', { 
+                            method: 'POST', 
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${s?.access_token}` }, 
+                            body: JSON.stringify({ action: 'delete', userId: a.id }) 
+                          })
+                          const data = await res.json()
+                          if (data.error) toast.error(data.error)
+                          else {
+                            toast.success('Admin berhasil dihapus')
+                            fetchAdmins()
+                          }
+                          setLoading(false)
+                        }
+                      },
+                      cancel: { label: 'Batal' }
+                    })
+                  }} className="p-2.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all rounded-lg">
                     <Trash2 size={18} />
                   </button>
                 )}
@@ -831,14 +887,14 @@ function PersonalSettings({ session, onRefresh, isSuperAdmin, stats }) {
     if (form.password) { 
       if (form.password.length < 6) { 
         setLoading(false)
-        return alert('Min 6 Karakter!')
+        return toast.error('Password minimal 6 karakter!')
       }
       updateData.password = form.password 
     }
     const { error } = await supabase.auth.updateUser(updateData)
-    if (error) alert(`Gagal: ${error.message}`)
+    if (error) toast.error(`Gagal: ${error.message}`)
     else { 
-      alert('Profil berhasil diperbarui!')
+      toast.success('Profil berhasil diperbarui!')
       setForm({ ...form, password: '' })
       onRefresh() 
     }
@@ -899,11 +955,21 @@ function PersonalSettings({ session, onRefresh, isSuperAdmin, stats }) {
           </div>
           <p className="text-sm text-rose-700 mb-6">Pembersihan data akan menghapus semua tiket yang telah berstatus &quot;Selesai&quot;. Tindakan ini tidak dapat dibatalkan.</p>
           <button 
-            onClick={async () => { 
-              if (!window.confirm('Yakin ingin menghapus semua data selesai?')) return
-              const { error } = await supabase.from('orders').delete().eq('status', 'done')
-              if (error) alert(error.message)
-              else { alert('Data selesai berhasil dibersihkan'); onRefresh() }
+            onClick={() => {
+              toast.warning('Yakin ingin menghapus semua data selesai?', {
+                action: {
+                  label: 'Ya, Bersihkan',
+                  onClick: async () => {
+                    const { error } = await supabase.from('orders').delete().eq('status', 'done')
+                    if (error) toast.error(error.message)
+                    else { 
+                      toast.success('Data selesai berhasil dibersihkan')
+                      onRefresh() 
+                    }
+                  }
+                },
+                cancel: { label: 'Batal' }
+              })
             }} 
             disabled={stats?.done === 0} 
             className="py-3 px-6 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-bold shadow-md transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 w-full md:w-auto"
@@ -986,7 +1052,7 @@ export default function AdminPage() {
         if (error || !currentSession) {
           await supabase.auth.signOut()
           setSession(null)
-          alert('Sesi Anda telah berakhir. Silakan login kembali untuk keamanan.')
+          toast.error('Sesi Anda telah berakhir. Silakan login kembali untuk keamanan.')
         }
       }
     }
@@ -1055,6 +1121,7 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex font-sans text-slate-900 overflow-hidden">
+      <Toaster position="top-right" richColors />
       
       {/* ── SIDEBAR DESKTOP ─────────────────────────────────── */}
       <aside className="hidden lg:flex flex-col w-72 bg-white border-r border-slate-200 h-screen sticky top-0 z-40">
