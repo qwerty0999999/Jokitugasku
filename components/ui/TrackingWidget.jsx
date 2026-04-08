@@ -235,7 +235,7 @@ export default function TrackingWidget({ initialCode = '' }) {
     } finally {
       setLoading(false)
     }
-  }, [order])
+  }, [order, isSupabaseReady])
 
   // Realtime subscription
   useEffect(() => {

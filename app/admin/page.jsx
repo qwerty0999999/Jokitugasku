@@ -9,7 +9,7 @@ import {
   RotateCcw, Search, ChevronDown, Save, Star, TrendingUp,
   Package, Activity, LayoutDashboard, Users, Settings,
   DollarSign, Check, X, Plus, Edit3, Shield, AlertCircle,
-  Hash, User, Briefcase, Key, Trash2
+  Hash, User, Briefcase, Key, Trash2, MessageCircle
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
@@ -1032,7 +1032,7 @@ function WASettingsUI({ token, setToken, groupId, setGroupId, onSave, loading })
                 className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all"
               />
             </div>
-            <p className="text-[10px] text-slate-400 italic">Gunakan fitur 'Get Groups' di Fonnte untuk mendapatkan ID grup Admin.</p>
+            <p className="text-[10px] text-slate-400 italic">Gunakan fitur &apos;Get Groups&apos; di Fonnte untuk mendapatkan ID grup Admin.</p>
           </div>
 
           <div className="pt-4 flex flex-col sm:flex-row gap-3">
