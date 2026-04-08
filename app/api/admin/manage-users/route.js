@@ -17,20 +17,29 @@ function getSupabaseAdmin() {
 async function checkIsSuperAdmin(req) {
   try {
     const authHeader = req.headers.get('Authorization')
-    if (!authHeader) return false
+    if (!authHeader) {
+      console.warn('Auth check failed: No Authorization header')
+      return false
+    }
     const token = authHeader.replace('Bearer ', '')
     
     const supabaseAdmin = getSupabaseAdmin()
     const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
     
-    if (error || !user) return false
+    if (error || !user) {
+      console.warn('Auth check failed: Invalid token or user not found', error?.message)
+      return false
+    }
 
-    const isSuperAdminEmail = user.email === process.env.SUPER_ADMIN_EMAIL
+    const adminEmail = process.env.SUPER_ADMIN_EMAIL || process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL
+    const isSuperAdminEmail = user.email.toLowerCase() === adminEmail?.toLowerCase()
     const hasAdminRole = user.app_metadata?.role === 'admin'
+
+    console.log(`Auth attempt: ${user.email} | isSuper: ${isSuperAdminEmail} | hasRole: ${hasAdminRole}`)
 
     return isSuperAdminEmail || hasAdminRole
   } catch (err) {
-    console.error('Auth check error:', err.message)
+    console.error('Auth check critical error:', err.message)
     return false
   }
 }
