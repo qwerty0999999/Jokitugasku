@@ -1082,7 +1082,11 @@ export default function AdminPage() {
   const [filterStatus, setFilterStatus] = useState('all')
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
-  const isSuperAdmin = useMemo(() => session?.user?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL, [session])
+  const isSuperAdmin = useMemo(() => {
+    const userEmail = session?.user?.email?.toLowerCase()
+    const adminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').toLowerCase()
+    return userEmail === adminEmail && adminEmail !== ''
+  }, [session])
 
   const fetchAllData = useCallback(async () => {
     setLoading(true)
