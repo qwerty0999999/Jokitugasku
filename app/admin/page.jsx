@@ -643,9 +643,9 @@ function RevisionCard({ rev, onRefresh, currentAdminEmail }) {
       </div>
       <h4 className="font-bold text-slate-900 mb-3 text-lg">{rev.orders?.client_name} <span className="text-slate-400 font-medium text-base">· {rev.orders?.service}</span></h4>
       <div className="p-4 bg-slate-50 rounded-xl text-sm text-slate-700 italic border border-slate-200 mb-5 relative">
-        <div className="absolute top-2 left-2 text-slate-300">"</div>
+        <div className="absolute top-2 left-2 text-slate-300">&quot;</div>
         <div className="px-4">{rev.note}</div>
-        <div className="absolute bottom-2 right-2 text-slate-300">"</div>
+        <div className="absolute bottom-2 right-2 text-slate-300">&quot;</div>
       </div>
       <button onClick={() => updateS('done')} disabled={loading} className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl uppercase tracking-widest shadow-md active:scale-95 transition-all flex items-center justify-center gap-2">
         {loading ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />} Tandai Selesai
