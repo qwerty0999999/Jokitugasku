@@ -182,80 +182,53 @@ export default function TrackingWidget({ initialCode = '' }) {
     if (inputRef.current && !initialCode) {
       inputRef.current.focus()
     }
-    
-    if (!isSupabaseReady) {
-      setError('Koneksi database belum diatur (Environment Variables missing)')
-    }
-  }, [initialCode, isSupabaseReady])
+  }, [initialCode])
 
-  const fetchOrder = useCallback(async (searchCode) => {
-    if (!isSupabaseReady) {
-      setError('Akses ditolak: Variabel lingkungan Supabase tidak ditemukan.')
-      return
-    }
-
+  const fetchOrder = useCallback(async (searchCode, background = false) => {
     const trimmed = searchCode.trim().toUpperCase()
     if (!trimmed) return
-    setLoading(true)
-    setError('')
     
-    // Smooth transition between searches
-    if (order) {
-      // Keep existing order visible but show loading state if needed
-    } else {
-      setOrder(null)
+    if (!background) {
+      setLoading(true)
+      setError('')
+      setExistingRating(null)
     }
-    setExistingRating(null)
 
     try {
-      const { data, error: sbError } = await supabase
-        .from('orders')
-        .select('id, order_code, service, client_name, status, progress, deadline, notes')
-        .eq('order_code', trimmed)
-        .single()
+      const response = await fetch(`/api/track-order?code=${trimmed}`)
+      const result = await response.json()
 
-      if (sbError || !data) {
-        setError('Kode order tidak ditemukan. Pastikan kode sudah benar.')
-        setOrder(null)
-      } else {
-        setOrder(data)
-        setLastUpdated(new Date())
-        // Cek apakah sudah ada rating
-        if (data.status === 'done') {
-          const { data: ratingData } = await supabase
-            .from('ratings')
-            .select('*')
-            .eq('order_code', trimmed)
-            .single()
-          setExistingRating(ratingData || null)
+      if (!response.ok) {
+        if (!background) {
+          setError(result.error || 'Terjadi kesalahan sistem.')
+          setOrder(null)
         }
+      } else {
+        setOrder(result.order)
+        setLastUpdated(new Date())
+        setExistingRating(result.rating)
+        setError('')
       }
     } catch {
-      setError('Tidak dapat terhubung ke server. Coba lagi.')
+      if (!background) {
+        setError('Koneksi terputus. Silakan coba lagi.')
+        setOrder(null)
+      }
     } finally {
-      setLoading(false)
+      if (!background) setLoading(false)
     }
-  }, [order, isSupabaseReady])
+  }, [])
 
-  // Realtime subscription
+  // Smart Polling (Setiap 15 detik) untuk menggantikan koneksi Realtime yang berisiko
   useEffect(() => {
     if (!order) return
-    const channel = supabase
-      .channel(`order-${order.order_code}`)
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'orders',
-        filter: `order_code=eq.${order.order_code}`,
-      }, (payload) => {
-        setOrder(payload.new)
-        setLastUpdated(new Date())
-      })
-      .subscribe()
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [order])
+    
+    const interval = setInterval(() => {
+      fetchOrder(order.order_code, true)
+    }, 15000)
+
+    return () => clearInterval(interval)
+  }, [order, fetchOrder])
 
   // Auto-fetch if code in URL
   useEffect(() => {
