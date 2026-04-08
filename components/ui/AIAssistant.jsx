@@ -152,7 +152,7 @@ export default function AIAssistant() {
               </motion.div>
             ) : (
               <motion.div key="chat" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }}>
-                <Sparkles size={20} className="sm:w-6 sm:h-6" strokeWidth={2.5} fill="white" className="opacity-90" />
+                <Bot size={22} className="sm:w-7 sm:h-7" strokeWidth={2.2} />
               </motion.div>
             )}
           </AnimatePresence>
@@ -181,7 +181,7 @@ export default function AIAssistant() {
               style={{ background: 'linear-gradient(135deg, #6366f1, #3B82F6)' }}
             >
               <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
-                <Sparkles size={18} className="text-white" />
+                <Bot size={20} className="text-white" strokeWidth={2.5} />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-white font-semibold text-sm">Asisten AI Jokitugasku</div>
