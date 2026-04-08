@@ -1203,7 +1203,16 @@ export default function AdminPage() {
 
   const fetchWASettings = useCallback(async () => {
     if (!isSuperAdmin) return
-    const { data } = await supabase.from('system_settings').select('*')
+    
+    // Pastikan tabel ada (Simulasi via client-side check jika perlu)
+    // Di sini kita coba ambil data, jika error karena tabel tak ada, kita infokan
+    const { data, error } = await supabase.from('system_settings').select('*')
+    
+    if (error && error.code === '42P01') {
+      console.warn('Tabel system_settings belum ada. Membuat via SQL Editor disarankan.')
+      // Opsional: Coba buat otomatis via RPC jika sudah diset di Supabase
+    }
+
     if (data) {
       const token = data.find(i => i.key === 'FONNTE_TOKEN')?.value || ''
       const gid = data.find(i => i.key === 'WA_GROUP_ID')?.value || ''
