@@ -1,40 +1,67 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-)
+export const dynamic = 'force-dynamic'
+
+function getSupabaseAdmin() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!url || !key) {
+    throw new Error('Supabase environment variables (URL or Service Role Key) are missing.')
+  }
+
+  return createClient(url, key)
+}
 
 async function checkIsSuperAdmin(req) {
-  const authHeader = req.headers.get('Authorization')
-  if (!authHeader) return false
-  const token = authHeader.replace('Bearer ', '')
-  const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
-  
-  if (error || !user) return false
+  try {
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) return false
+    const token = authHeader.replace('Bearer ', '')
+    
+    const supabaseAdmin = getSupabaseAdmin()
+    const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
+    
+    if (error || !user) return false
 
-  const isSuperAdminEmail = user.email === process.env.SUPER_ADMIN_EMAIL
-  const hasAdminRole = user.app_metadata?.role === 'admin'
+    const isSuperAdminEmail = user.email === process.env.SUPER_ADMIN_EMAIL
+    const hasAdminRole = user.app_metadata?.role === 'admin'
 
-  return isSuperAdminEmail || hasAdminRole
+    return isSuperAdminEmail || hasAdminRole
+  } catch (err) {
+    console.error('Auth check error:', err.message)
+    return false
+  }
 }
 
 export async function GET(req) {
-  if (!(await checkIsSuperAdmin(req))) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers()
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ users })
+  try {
+    if (!(await checkIsSuperAdmin(req))) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+    
+    const supabaseAdmin = getSupabaseAdmin()
+    const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers()
+    
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ users })
+  } catch (err) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 }
 
 export async function POST(req) {
-  if (!(await checkIsSuperAdmin(req))) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-
   try {
+    if (!(await checkIsSuperAdmin(req))) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
     const { email, password, name, action, userId } = await req.json()
+    const supabaseAdmin = getSupabaseAdmin()
 
     if (action === 'create') {
-      const { data, error } = await supabaseAdmin.auth.admin.createUser({
+      const { error } = await supabaseAdmin.auth.admin.createUser({
         email,
         password,
         user_metadata: { full_name: name },
