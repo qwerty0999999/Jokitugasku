@@ -76,7 +76,10 @@ export default function OrderForm() {
       fetch('/api/broadcast-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderData: orderPayload }),
+        body: JSON.stringify({ 
+          orderData: orderPayload,
+          type: 'NEW_ORDER'
+        }),
       }).catch(err => console.error('Broadcast failed:', err))
 
     } catch (err) {

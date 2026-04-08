@@ -22,7 +22,17 @@ export async function POST(req) {
 
     let message = ""
 
-    if (type === 'NEW_ORDER') {
+    // LOGIC: Menentukan pesan berdasarkan tipe (Default ke NEW_ORDER jika type kosong)
+    if (type === 'CLAIM_ORDER') {
+      message = `*✅ PESANAN DIAMBIL*
+----------------------------------
+*Admin:* ${adminName || 'Admin'}
+*Telah mengambil tiket:* ${orderData.order_code} (${orderData.service})
+----------------------------------
+Status tiket kini: *${(orderData.status || 'PROSES').toUpperCase()}*
+Semangat pengerjaannya! 💪✨`
+    } else {
+      // DEFAULT: NEW_ORDER
       message = `*🔔 PESANAN BARU MASUK!*
 ----------------------------------
 *Kode Order:* ${orderData.order_code}
@@ -31,15 +41,6 @@ export async function POST(req) {
 *Deadline:* ${orderData.deadline || 'Tidak ada'}
 ----------------------------------
 Silakan admin segera proses di Dashboard! 🚀`
-    } 
-    else if (type === 'CLAIM_ORDER') {
-      message = `*✅ PESANAN DIAMBIL*
-----------------------------------
-*Admin:* ${adminName}
-*Telah mengambil tiket:* ${orderData.order_code} (${orderData.service})
-----------------------------------
-Status tiket kini: *${orderData.status.toUpperCase()}*
-Semangat pengerjaannya! 💪✨`
     }
 
     const formData = new FormData()
