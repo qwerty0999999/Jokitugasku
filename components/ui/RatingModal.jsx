@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Star, Send, CheckCircle } from 'lucide-react'
+import { X, Star, Send, CheckCircle, Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
 export default function RatingModal({ order, onClose }) {
@@ -133,7 +133,7 @@ export default function RatingModal({ order, onClose }) {
                     rows={3}
                     maxLength={300}
                     placeholder="Tulis ulasan singkat tentang layanan kami…"
-                    className="input-base resize-none"
+                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-all resize-none"
                   />
                   <div className="text-right text-xs text-gray-300 mt-1">{comment.length}/300</div>
                 </div>
@@ -149,13 +149,10 @@ export default function RatingModal({ order, onClose }) {
                   onClick={handleSubmit}
                   disabled={!stars || submitting}
                   id="btn-submit-rating"
-                  className="w-full btn-primary justify-center disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                  className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {submitting ? (
-                    <svg className="animate-spin" width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                      <circle cx={12} cy={12} r={10} strokeOpacity={0.25} />
-                      <path d="M12 2a10 10 0 0 1 10 10" />
-                    </svg>
+                    <Loader2 size={16} className="animate-spin" />
                   ) : (
                     <Send size={15} />
                   )}
@@ -169,3 +166,5 @@ export default function RatingModal({ order, onClose }) {
     </AnimatePresence>
   )
 }
+
+// Add Loader2 to imports at the top

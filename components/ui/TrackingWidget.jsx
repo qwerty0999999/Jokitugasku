@@ -269,13 +269,16 @@ export default function TrackingWidget({ initialCode = '' }) {
 
   const cfg = order ? (statusConfig[order.status] ?? statusConfig.pending) : null
 
-  const renderStars = (n) => (
-    <span className="flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <Star key={i} size={14} className={i <= n ? 'fill-amber-400 text-amber-400' : 'text-gray-200 fill-gray-200'} />
-      ))}
-    </span>
-  )
+  const renderStars = (n) => {
+    const starCount = typeof n === 'number' ? Math.max(0, Math.min(5, n)) : 0
+    return (
+      <span className="flex items-center gap-0.5">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <Star key={i} size={14} className={i <= starCount ? 'fill-amber-400 text-amber-400' : 'text-gray-200 fill-gray-200'} />
+        ))}
+      </span>
+    )
+  }
 
   return (
     <div className="w-full max-w-2xl mx-auto">
@@ -286,8 +289,11 @@ export default function TrackingWidget({ initialCode = '' }) {
           onClose={() => {
             setShowRating(false)
             // Re-fetch rating after modal close
-            supabase.from('ratings').select('*').eq('order_code', order.order_code).single()
-              .then(({ data }) => setExistingRating(data || null))
+            if (isSupabaseReady) {
+              supabase.from('ratings').select('*').eq('order_code', order.order_code).single()
+                .then(({ data }) => { if (data) setExistingRating(data) })
+                .catch(() => {})
+            }
           }}
         />
       )}
