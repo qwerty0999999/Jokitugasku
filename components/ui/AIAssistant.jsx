@@ -15,6 +15,9 @@ const WELCOME = 'Halo! 👋 Saya asisten AI Jokitugasku. Ada yang bisa saya bant
 
 export default function AIAssistant() {
   const [open, setOpen] = useState(false)
+  const [visible, setVisible] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+  const [hideLabel, setHideLabel] = useState(false)
   const [messages, setMessages] = useState([
     { role: 'assistant', content: WELCOME },
   ])
@@ -25,9 +28,31 @@ export default function AIAssistant() {
   const inputRef = useRef(null)
 
   useEffect(() => {
+    // Penundaan muncul agar tidak mengagetkan
+    const timer = setTimeout(() => setVisible(true), 2500)
+    
+    // Deteksi scroll untuk transparansi
+    const handleScroll = () => {
+      if (window.scrollY > 100) {
+        setScrolled(true)
+        setHideLabel(true)
+      } else {
+        setScrolled(false)
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    return () => {
+      clearTimeout(timer)
+      window.removeEventListener('scroll', handleScroll)
+    }
+  }, [])
+
+  useEffect(() => {
     if (open) {
       setTimeout(() => inputRef.current?.focus(), 300)
       setShowDot(false)
+      setHideLabel(true)
     }
   }, [open])
 
@@ -89,14 +114,14 @@ export default function AIAssistant() {
   return (
     <>
       {/* Floating button */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+      <div className={`fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 transition-all duration-500 ${visible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'} ${scrolled && !open ? 'opacity-40 hover:opacity-100' : ''}`}>
         <AnimatePresence>
-          {!open && (
+          {!open && !hideLabel && (
             <motion.div
               initial={{ opacity: 0, x: 10, scale: 0.9 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: 10, scale: 0.9 }}
-              className="bg-white border border-gray-100 shadow-lg rounded-2xl px-4 py-2.5 text-sm font-medium text-gray-700 max-w-[220px] text-center mb-1"
+              className="bg-white border border-gray-100 shadow-lg rounded-2xl px-4 py-2.5 text-sm font-medium text-gray-700 max-w-[220px] text-center mb-1 hidden sm:block"
             >
               Chat AI Jokitugasku ✨
             </motion.div>
@@ -108,7 +133,7 @@ export default function AIAssistant() {
           onClick={() => setOpen((o) => !o)}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
-          className="relative w-14 h-14 rounded-full flex items-center justify-center text-white shadow-xl group transition-all duration-300"
+          className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center text-white shadow-xl group transition-all duration-300"
           style={{ background: 'linear-gradient(135deg, #6366f1, #3B82F6)' }}
           aria-label="Buka AI Assistant"
         >
@@ -123,18 +148,18 @@ export default function AIAssistant() {
           <AnimatePresence mode="wait">
             {open ? (
               <motion.div key="x" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }}>
-                <X size={24} strokeWidth={2.5} />
+                <X size={20} className="sm:w-6 sm:h-6" strokeWidth={2.5} />
               </motion.div>
             ) : (
               <motion.div key="chat" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }}>
-                <Sparkles size={24} strokeWidth={2.5} fill="white" className="opacity-90" />
+                <Sparkles size={20} className="sm:w-6 sm:h-6" strokeWidth={2.5} fill="white" className="opacity-90" />
               </motion.div>
             )}
           </AnimatePresence>
 
           {/* Unread notification dot */}
           {showDot && !open && (
-            <span className="absolute top-0 right-0 w-4 h-4 bg-rose-500 rounded-full border-2 border-white z-20" />
+            <span className="absolute top-0 right-0 w-3.5 h-3.5 sm:w-4 sm:h-4 bg-rose-500 rounded-full border-2 border-white z-20" />
           )}
         </motion.button>
       </div>
@@ -147,8 +172,8 @@ export default function AIAssistant() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 24 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
-            className="fixed bottom-24 right-6 z-40 w-[90vw] max-w-[380px] bg-white rounded-3xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden"
-            style={{ height: '520px' }}
+            className="fixed bottom-20 right-4 sm:bottom-24 sm:right-6 z-40 w-[calc(100vw-32px)] sm:w-[380px] bg-white rounded-[2rem] sm:rounded-3xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden"
+            style={{ height: 'min(580px, 75vh)' }}
           >
             {/* Header */}
             <div
