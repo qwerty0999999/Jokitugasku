@@ -29,9 +29,9 @@ CREATE INDEX IF NOT EXISTS idx_orders_order_code ON orders (order_code);
 -- 3. Row Level Security untuk tabel orders
 ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Publik bisa baca order via code"
-  ON orders FOR SELECT
-  USING (true);
+-- [SECURITY PATCH]: Akses SELECT publik via RLS dicabut untuk mencegah kebocoran PII.
+-- Gunakan Edge Route API (/api/track-order) dengan Service Role untuk verifikasi order yang aman.
+-- CREATE POLICY "Publik bisa baca order via code" ON orders FOR SELECT USING (true);
 
 CREATE POLICY "Publik bisa buat order baru"
   ON orders FOR INSERT
