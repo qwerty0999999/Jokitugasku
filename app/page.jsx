@@ -1,13 +1,13 @@
-import Hero from '@/components/Hero'
-import Services from '@/components/Services'
-import About from '@/components/About'
-import HowItWorks from '@/components/HowItWorks'
-import Testimonials from '@/components/Testimonials'
-import Pricing from '@/components/Pricing'
-import OrderForm from '@/components/OrderForm'
-import FAQ from '@/components/FAQ'
-import CTA from '@/components/CTA'
-import Footer from '@/components/Footer'
+import Hero from '@/components/sections/Hero'
+import Services from '@/components/sections/Services'
+import About from '@/components/sections/About'
+import HowItWorks from '@/components/sections/HowItWorks'
+import Testimonials from '@/components/sections/Testimonials'
+import Pricing from '@/components/sections/Pricing'
+import OrderForm from '@/components/ui/OrderForm'
+import FAQ from '@/components/sections/FAQ'
+import CTA from '@/components/sections/CTA'
+import Footer from '@/components/layout/Footer'
 
 export default function HomePage() {
   return (

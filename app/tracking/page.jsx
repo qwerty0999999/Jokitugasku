@@ -3,7 +3,7 @@
 import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
-import TrackingWidget from '@/components/TrackingWidget'
+import TrackingWidget from '@/components/ui/TrackingWidget'
 import Link from 'next/link'
 import { MessageCircle, HelpCircle, ArrowRight } from 'lucide-react'
 

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, CheckCircle2, Clock, Loader2, AlertCircle, RotateCcw, Star, CalendarClock } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import RatingModal from '@/components/RatingModal'
+import RatingModal from '@/components/ui/RatingModal'
 
 const statusConfig = {
   pending: {
