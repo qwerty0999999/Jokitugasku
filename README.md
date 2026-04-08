@@ -41,7 +41,7 @@ Sistem manajemen internal tingkat lanjut untuk:
 ## 📸 Tampilan Aplikasi
 
 <div align="center">
-  <img src="public/hero.png" alt="Jokitugasku Hero" width="800" style="border-radius: 10px; margin-bottom: 20px;">
+  <img src="public/me.png" alt="Jokitugasku Hero" width="800" style="border-radius: 10px; margin-bottom: 20px;">
   <p><i>(Tambahkan screenshot dashboard & tracking widget Anda di sini untuk tampilan lebih menarik)</i></p>
 </div>
 
