@@ -128,3 +128,17 @@ CREATE POLICY "Admin full access"
     (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
   );
 ALTER PUBLICATION supabase_realtime ADD TABLE progress_log;
+
+-- ============================================================
+-- SYSTEM SETTINGS (WhatsApp, etc)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS system_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT
+);
+
+ALTER TABLE system_settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow read for all" ON system_settings FOR SELECT USING (true);
+CREATE POLICY "Admin full access settings" ON system_settings FOR ALL TO authenticated USING (true);
+
