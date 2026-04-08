@@ -381,7 +381,7 @@ function OTPModal({ isOpen, onClose, onConfirm, loading }) {
 }
 
 // ── KOMPONEN ORDER CARD ──────────────────────────────────────
-function OrderCard({ order, onSave, currentAdminEmail, isSuperAdmin }) {
+function OrderCard({ order, onSave, currentAdminEmail, adminName, isSuperAdmin }) {
   const [expanded, setExpanded] = useState(false)
   const [loading, setLoading] = useState(false)
   const [showOtpModal, setShowOtpModal] = useState(false)
@@ -445,7 +445,7 @@ function OrderCard({ order, onSave, currentAdminEmail, isSuperAdmin }) {
         body: JSON.stringify({ 
           orderData: { ...order, status: up.status }, 
           type: 'CLAIM_ORDER',
-          adminName: session?.user?.user_metadata?.full_name || 'Admin'
+          adminName: adminName || 'Admin'
         }),
       }).catch(err => console.error('Broadcast Claim Error:', err))
     }
@@ -1446,14 +1446,22 @@ export default function AdminPage() {
                     </select>
                   </div>
 
-                  {/* Order List */}
                   <div className="grid grid-cols-1 gap-4">
                     {filteredOrders.length === 0 ? (
                       <div className="py-20 text-center text-slate-400 font-medium bg-white rounded-2xl border border-dashed border-slate-300">
                         Tidak ada data tiket ditemukan.
                       </div>
                     ) : (
-                      filteredOrders.map(o => <OrderCard key={o.id} order={o} onSave={fetchAllData} currentAdminEmail={session?.user?.email} isSuperAdmin={isSuperAdmin} />)
+                      filteredOrders.map(o => (
+                        <OrderCard 
+                          key={o.id} 
+                          order={o} 
+                          onSave={fetchAllData} 
+                          currentAdminEmail={session?.user?.email} 
+                          adminName={session?.user?.user_metadata?.full_name}
+                          isSuperAdmin={isSuperAdmin} 
+                        />
+                      ))
                     )}
                   </div>
                 </motion.div>
