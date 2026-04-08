@@ -73,6 +73,13 @@ function LoginForm({ onLogin, onLoginStart }) {
     e.preventDefault()
     setLoading(true)
     setError('')
+
+    const isSupabaseReady = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    if (!isSupabaseReady) {
+      setError('Sistem belum terhubung ke database. Periksa Environment Variables di Vercel.')
+      setLoading(false)
+      return
+    }
     
     try {
       const { data, error: err } = await supabase.auth.signInWithPassword({ email, password })

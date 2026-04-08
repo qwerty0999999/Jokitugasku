@@ -113,8 +113,15 @@ function DeadlineCountdown({ deadline }) {
   const [isPast, setIsPast] = useState(false)
 
   useEffect(() => {
+    if (!deadline) return
     const calc = () => {
-      const diff = new Date(deadline) - new Date()
+      const targetDate = new Date(deadline)
+      if (isNaN(targetDate.getTime())) {
+        setTimeLeft('Format deadline salah')
+        return
+      }
+      
+      const diff = targetDate - new Date()
       if (diff <= 0) {
         setIsPast(true)
         setTimeLeft('Deadline terlewat')
@@ -124,12 +131,14 @@ function DeadlineCountdown({ deadline }) {
       const m = Math.floor((diff % 3600000) / 60000)
       const d = Math.floor(h / 24)
       setIsUrgent(h < 24)
-      setTimeLeft(d > 0 ? `${d}h ${h % 24}j lagi` : `${h}j ${m}m lagi`)
+      setTimeLeft(d > 0 ? `${d}d ${h % 24}h lagi` : `${h}h ${m}m lagi`)
     }
     calc()
     const id = setInterval(calc, 60000)
     return () => clearInterval(id)
   }, [deadline])
+
+  if (!deadline) return null
 
   return (
     <div className={`flex items-center gap-2 px-3 py-2.5 sm:px-4 sm:py-3 rounded-xl text-xs sm:text-sm font-medium border
@@ -143,7 +152,10 @@ function DeadlineCountdown({ deadline }) {
       <span className="truncate">
         Deadline:{' '}
         <strong className="whitespace-nowrap">
-          {new Date(deadline).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}
+          {(() => {
+            const d = new Date(deadline)
+            return isNaN(d.getTime()) ? 'Invalid Date' : d.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })
+          })()}
         </strong>
         {' '}
         <span className="opacity-70">— {timeLeft}</span>
@@ -163,14 +175,25 @@ export default function TrackingWidget({ initialCode = '' }) {
   const [showRating, setShowRating] = useState(false)
   const inputRef = useRef(null)
 
+  const isSupabaseReady = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
   useEffect(() => {
     // Focus input on mount
     if (inputRef.current && !initialCode) {
       inputRef.current.focus()
     }
-  }, [initialCode])
+    
+    if (!isSupabaseReady) {
+      setError('Koneksi database belum diatur (Environment Variables missing)')
+    }
+  }, [initialCode, isSupabaseReady])
 
   const fetchOrder = useCallback(async (searchCode) => {
+    if (!isSupabaseReady) {
+      setError('Akses ditolak: Variabel lingkungan Supabase tidak ditemukan.')
+      return
+    }
+
     const trimmed = searchCode.trim().toUpperCase()
     if (!trimmed) return
     setLoading(true)
