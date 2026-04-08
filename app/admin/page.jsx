@@ -1027,21 +1027,27 @@ export default function AdminPage() {
   }, [isSuperAdmin])
 
   useEffect(() => {
-    // 1. Initial Session Check
-    const checkInitialSession = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession()
-      if (error || !session) {
+    let isMounted = true
+
+    // 1. Initial Session Check & Data Fetch
+    const init = async () => {
+      const { data: { session: s }, error } = await supabase.auth.getSession()
+      if (!isMounted) return
+
+      if (error || !s) {
         setSession(null)
       } else {
-        setSession(session)
+        setSession(s)
         fetchAllData()
       }
       setCheckingAuth(false)
     }
-    checkInitialSession()
+    init()
 
     // 2. Auth State Listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, s) => { 
+      if (!isMounted) return
+      
       if (event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
         setSession(null)
       } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
@@ -1054,23 +1060,25 @@ export default function AdminPage() {
 
     // 3. Security: Re-validate session when window is focused
     const handleFocus = async () => {
-      if (session && !isLoggingIn) {
-        const { data: { session: currentSession }, error } = await supabase.auth.getSession()
-        if (error || !currentSession) {
-          await supabase.auth.signOut()
-          setSession(null)
-          toast.error('Sesi Anda telah berakhir. Silakan login kembali untuk keamanan.')
-        }
+      if (!isMounted || isLoggingIn) return
+      
+      const { data: { session: currentSession } } = await supabase.auth.getSession()
+      if (!currentSession) {
+        await supabase.auth.signOut()
+        setSession(null)
+        toast.error('Sesi Anda telah berakhir. Silakan login kembali untuk keamanan.')
       }
     }
 
     window.addEventListener('focus', handleFocus)
 
     return () => {
+      isMounted = false
       subscription.unsubscribe()
       window.removeEventListener('focus', handleFocus)
     }
-  }, [fetchAllData, session, isLoggingIn])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchAllData])
 
   const stats = useMemo(() => {
     const email = session?.user?.email
