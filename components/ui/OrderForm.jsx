@@ -59,7 +59,7 @@ export default function OrderForm() {
     window.open(`https://wa.me/${WA_NUMBER}?text=${message}`, '_blank')
 
     try {
-      await supabase.from('orders').insert({
+      const orderPayload = {
         order_code: orderCode,
         client_name: name,
         client_phone: phone,
@@ -68,9 +68,19 @@ export default function OrderForm() {
         deadline: deadline || null,
         progress: 0,
         status: 'pending',
-      })
+      }
+
+      await supabase.from('orders').insert(orderPayload)
+
+      // Broadcast ke grup WA Admin via API internal
+      fetch('/api/broadcast-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderData: orderPayload }),
+      }).catch(err => console.error('Broadcast failed:', err))
+
     } catch (err) {
-      console.warn('Supabase insert skipped:', err.message)
+      console.warn('Order submission error:', err.message)
     }
 
     setOrderResult({ code: orderCode, name })
