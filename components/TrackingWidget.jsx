@@ -170,7 +170,7 @@ export default function TrackingWidget({ initialCode = '' }) {
     }
   }, [initialCode])
 
-  const fetchOrder = async (searchCode) => {
+  const fetchOrder = useCallback(async (searchCode) => {
     const trimmed = searchCode.trim().toUpperCase()
     if (!trimmed) return
     setLoading(true)
@@ -212,7 +212,7 @@ export default function TrackingWidget({ initialCode = '' }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [order])
 
   // Realtime subscription
   useEffect(() => {
@@ -229,13 +229,15 @@ export default function TrackingWidget({ initialCode = '' }) {
         setLastUpdated(new Date())
       })
       .subscribe()
-    return () => supabase.removeChannel(channel)
-  }, [order?.order_code])
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [order])
 
   // Auto-fetch if code in URL
   useEffect(() => {
     if (initialCode) fetchOrder(initialCode)
-  }, [initialCode])
+  }, [initialCode, fetchOrder])
 
   const handleSearch = (e) => {
     e.preventDefault()

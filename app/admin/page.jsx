@@ -997,7 +997,7 @@ export default function AdminPage() {
       subscription.unsubscribe()
       window.removeEventListener('focus', handleFocus)
     }
-  }, [fetchAllData, session?.user?.id, isLoggingIn])
+  }, [fetchAllData, session, isLoggingIn])
 
   const stats = useMemo(() => {
     const email = session?.user?.email
@@ -1059,8 +1059,8 @@ export default function AdminPage() {
       {/* ── SIDEBAR DESKTOP ─────────────────────────────────── */}
       <aside className="hidden lg:flex flex-col w-72 bg-white border-r border-slate-200 h-screen sticky top-0 z-40">
         <div className="p-6 border-b border-slate-100 flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
-            <img src="/logo.png" className="w-6 h-6 object-contain brightness-0 invert" alt="logo" />
+          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200 relative overflow-hidden">
+            <Image src="/logo.png" fill className="object-contain brightness-0 invert p-2" alt="logo" />
           </div>
           <div>
             <h1 className="font-black text-lg text-slate-900 tracking-tight leading-none">Admin Core</h1>
