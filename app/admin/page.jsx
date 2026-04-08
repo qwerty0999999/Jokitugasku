@@ -437,6 +437,19 @@ function OrderCard({ order, onSave, currentAdminEmail, isSuperAdmin }) {
       return
     }
 
+    // BROADCAST: Jika tiket diambil (status berubah dari pending atau pertama kali diproses)
+    if (order.status === 'pending' || !order.processed_by) {
+      fetch('/api/broadcast-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          orderData: { ...order, status: up.status }, 
+          type: 'CLAIM_ORDER',
+          adminName: session?.user?.user_metadata?.full_name || 'Admin'
+        }),
+      }).catch(err => console.error('Broadcast Claim Error:', err))
+    }
+
     onSave()
 
     const phone = order.client_phone.replace(/[^0-9]/g, '').replace(/^0/, '62')
