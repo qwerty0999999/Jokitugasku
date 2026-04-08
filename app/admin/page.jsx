@@ -989,6 +989,84 @@ function PersonalSettings({ session, onRefresh, isSuperAdmin, stats }) {
   )
 }
 
+// ── PENGATURAN WHATSAPP ──────────────────────────────────────
+function WASettingsUI({ token, setToken, groupId, setGroupId, onSave, loading }) {
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-2xl p-6 md:p-8 border border-slate-200 shadow-sm">
+        <div className="flex items-center gap-4 mb-8">
+          <div className="w-14 h-14 bg-green-50 text-green-600 rounded-xl flex items-center justify-center">
+            <MessageCircle size={28} />
+          </div>
+          <div>
+            <h3 className="text-xl font-black text-slate-900">Integrasi WhatsApp Gateway</h3>
+            <p className="text-sm text-slate-500">Hubungkan sistem dengan grup WhatsApp admin</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 max-w-2xl">
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Fonnte API Token</label>
+            <div className="relative">
+              <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <input 
+                type="password"
+                value={token}
+                onChange={e => setToken(e.target.value)}
+                placeholder="Masukkan token dari fonnte.com"
+                className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all"
+              />
+            </div>
+            <p className="text-[10px] text-slate-400 italic">Dapatkan token di dashboard fonnte.com setelah scan QR.</p>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">WhatsApp Group ID</label>
+            <div className="relative">
+              <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <input 
+                type="text"
+                value={groupId}
+                onChange={e => setGroupId(e.target.value)}
+                placeholder="Contoh: 1234567890@g.us"
+                className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all"
+              />
+            </div>
+            <p className="text-[10px] text-slate-400 italic">Gunakan fitur 'Get Groups' di Fonnte untuk mendapatkan ID grup Admin.</p>
+          </div>
+
+          <div className="pt-4 flex flex-col sm:flex-row gap-3">
+            <button 
+              onClick={onSave}
+              disabled={loading || !token || !groupId}
+              className="px-8 py-3.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-bold shadow-lg shadow-green-200 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {loading ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} Simpan Konfigurasi
+            </button>
+            <a 
+              href="https://fonnte.com" 
+              target="_blank" 
+              rel="noreferrer"
+              className="px-6 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-sm font-bold transition-all text-center"
+            >
+              Buka Fonnte.com
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6 text-sm text-blue-800">
+        <h4 className="font-bold flex items-center gap-2 mb-2">💡 Petunjuk Penggunaan:</h4>
+        <ul className="list-disc list-inside space-y-1 opacity-90">
+          <li>Pastikan nomor WA sudah aktif di dashboard gateway.</li>
+          <li>ID Grup Admin Jokitugasku.id harus sesuai agar notifikasi tidak salah kirim.</li>
+          <li>Perubahan di sini langsung aktif tanpa perlu redeploy website.</li>
+        </ul>
+      </div>
+    </div>
+  )
+}
+
 // ── MAIN DASHBOARD COMPONENT ─────────────────────────────────
 export default function AdminPage() {
   const [session, setSession] = useState(null)
@@ -1106,10 +1184,45 @@ export default function AdminPage() {
       { id: 'revisions', label: 'Revisi', icon: RotateCcw, badge: revisions.filter(r=>r.status==='pending').length },
       { id: 'ratings', label: 'Ulasan', icon: Star },
     ]
-    if (isSuperAdmin) items.push({ id: 'team', label: 'Tim', icon: Users })
-    items.push({ id: 'settings', label: 'Pengaturan', icon: Settings })
+    if (isSuperAdmin) {
+      items.push({ id: 'team', label: 'Tim', icon: Users })
+      items.push({ id: 'wa-settings', label: 'Pengaturan WA', icon: MessageCircle })
+    }
+    items.push({ id: 'settings', label: 'Profil', icon: Settings })
     return items
   }, [isSuperAdmin, stats.pending, revisions])
+
+  // --- WA SETTINGS STATE ---
+  const [waToken, setWaToken] = useState('')
+  const [waGroupId, setWaGroupId] = useState('')
+  const [isSavingWA, setIsSavingWA] = useState(false)
+
+  const fetchWASettings = useCallback(async () => {
+    if (!isSuperAdmin) return
+    const { data } = await supabase.from('system_settings').select('*')
+    if (data) {
+      const token = data.find(i => i.key === 'FONNTE_TOKEN')?.value || ''
+      const gid = data.find(i => i.key === 'WA_GROUP_ID')?.value || ''
+      setWaToken(token)
+      setWaGroupId(gid)
+    }
+  }, [isSuperAdmin])
+
+  const saveWASettings = async () => {
+    setIsSavingWA(true)
+    try {
+      await supabase.from('system_settings').upsert([{ key: 'FONNTE_TOKEN', value: waToken.trim() }, { key: 'WA_GROUP_ID', value: waGroupId.trim() }])
+      toast.success('Pengaturan WhatsApp berhasil disimpan!')
+    } catch {
+      toast.error('Gagal menyimpan pengaturan.')
+    } finally {
+      setIsSavingWA(false)
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab === 'wa-settings') fetchWASettings()
+  }, [activeTab, fetchWASettings])
 
   if (checkingAuth) {
     return (
@@ -1348,6 +1461,17 @@ export default function AdminPage() {
 
               {/* TAB: TEAM */}
               {activeTab === 'team' && isSuperAdmin && <AdminManagement />}
+
+              {/* TAB: WA SETTINGS */}
+              {activeTab === 'wa-settings' && isSuperAdmin && (
+                <motion.div key="wa-settings" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <WASettingsUI 
+                    token={waToken} setToken={setWaToken} 
+                    groupId={waGroupId} setGroupId={setWaGroupId} 
+                    onSave={saveWASettings} loading={isSavingWA} 
+                  />
+                </motion.div>
+              )}
 
               {/* TAB: SETTINGS */}
               {activeTab === 'settings' && (
