@@ -555,9 +555,17 @@ function OrderCard({ order, onSave, currentAdminEmail, adminName, isSuperAdmin }
             <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
               <User size={14} className="text-slate-400"/> {order.client_name}
             </div>
+            <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
+              <MessageCircle size={14} className="text-emerald-500"/> {order.client_phone || '-'}
+            </div>
             <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
               <DollarSign size={12}/> {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(order.price || 0)}
             </div>
+            {isSuperAdmin && order.processed_by && (
+              <div className="flex items-center gap-1.5 text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">
+                <Shield size={12}/> {order.processed_by}
+              </div>
+            )}
           </div>
         </div>
         <div className="flex items-center justify-between sm:justify-end gap-6 mt-4 sm:mt-0">
@@ -589,6 +597,14 @@ function OrderCard({ order, onSave, currentAdminEmail, adminName, isSuperAdmin }
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="bg-slate-50 border-t border-slate-200 overflow-hidden">
             <div className="p-5 sm:p-8 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-2">
+                    <Briefcase size={14} className="text-blue-500" /> Deskripsi Tugas
+                  </label>
+                  <div className="p-4 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 whitespace-pre-wrap shadow-sm">
+                    {order.description || 'Tidak ada deskripsi.'}
+                  </div>
+                </div>
                 <div className="space-y-2">
                   <label className="text-xs font-semibold text-slate-600">Status Pengerjaan</label>
                   <select value={formData.status} onChange={e => handleStatusChange(e.target.value)} className="w-full p-3 bg-white border border-slate-300 rounded-xl text-sm font-medium shadow-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
