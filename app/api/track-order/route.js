@@ -1,5 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
+import { getSupabaseAdmin } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,15 +12,7 @@ export async function GET(req) {
       return NextResponse.json({ error: 'Kode order tidak valid.' }, { status: 400 })
     }
 
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY // Akses Service Role (Bypass RLS)
-
-    if (!url || !key) {
-      console.warn('API /track-order: Kunci Supabase belum diset.')
-      return NextResponse.json({ error: 'Database tidak terkonfigurasi.' }, { status: 500 })
-    }
-
-    const supabaseAdmin = createClient(url, key)
+    const supabaseAdmin = getSupabaseAdmin()
 
     // Tarik data order (Sensor Data Sensitif Seperti Nomor HP dan Harga)
     const { data: order, error } = await supabaseAdmin

@@ -1,5 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
+import { getSupabaseAdmin } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,10 +15,7 @@ export async function POST(req) {
     if (!orderData || typeof orderData !== 'object' || !orderData.order_code) {
       return NextResponse.json({ message: 'orderData is required and must contain order_code' }, { status: 400 })
     }
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-    )
+    const supabase = getSupabaseAdmin()
 
     const { data: settings } = await supabase.from('system_settings').select('*')
     const FONNTE_TOKEN = settings?.find(i => i.key === 'FONNTE_TOKEN')?.value || process.env.FONNTE_TOKEN
