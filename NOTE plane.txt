@@ -1,16 +1,207 @@
 ============================================================
-  JOKITUGASKU.ID — DEVELOPMENT NOTE (v6.0)
-  Updated: Friday, 10 April 2026
+  JOKITUGASKU — PROJECT PLANNING NOTES
+  Update Terakhir: 2026-04-04
 ============================================================
 
-🚀 CURRENT STATUS:
+─────────────────────────────────────────────
+  🚀 PROGRES PEKERJAAN (4 APRIL 2026)
+─────────────────────────────────────────────
+  [x] EKSEKUSI SQL MIGRATION (FIXED)
+  [x] UI/UX PREMIUM v5.5 (FINAL REDESIGN)
+  [x] SISTEM KEAMANAN & SUPER ADMIN
+  [x] OTOMATISASI ALUR KERJA (WORKFLOW)
+  [x] OPTIMASI AI ASSISTANT (TOKEN SAVER)
+
+─────────────────────────────────────────────
+  ⚠️ PENDING & BELUM DIKERJAKAN
+─────────────────────────────────────────────
+  1. INTEGRASI TESTIMONIAL REAL-TIME
+     - Tugas: Menampilkan ulasan bintang 5 dari database langsung ke
+       halaman depan (Landing Page) agar calon klien lebih percaya.
+
+  2. DASHBOARD USER (PENYEMPURNAAN)
+     - Tugas: Membuat halaman khusus bagi klien untuk melihat riwayat
+       pesanan mereka sendiri dan mendownload nota/invoice resmi.
+
+  3. SISTEM UPLOAD FILE INTERNAL
+     - Tugas: Menambahkan tombol upload di detail order (admin) agar
+       file hasil kerja (watermark/final) bisa disimpan di Supabase Storage
+       dan diakses langsung oleh klien.
+
+  4. AUTOMATED EMAIL RECEIPT
+     - Tugas: Mengirimkan struk pembayaran otomatis ke email klien
+       setelah admin menekan tombol "Lunas".
+
+  5. MONITORING PENGGUNAAN TOKEN AI
+     - Tugas: Memantau log penggunaan token selama 24 jam untuk
+       memastikan tidak ada kebocoran atau penggunaan liar oleh bot.
+
+  6. SEARCH SEO OPTIMIZATION
+     - Tugas: Mengoptimalkan Meta Tag agar website Jokitugasku muncul
+       di halaman pertama Google saat orang mencari "Joki Tugas".
+
+─────────────────────────────────────────────
+  📋 CATATAN PENTING & INSTRUKSI
+─────────────────────────────────────────────
+  - NOTE: Tampilan Admin telah dirombak total menjadi versi Premium White.
+  - UPDATE: Web telah diperbarui dengan sistem keamanan berlapis.
+  - OTP Hapus: 7788 + Menit saat ini (OTP).
+─────────────────────────────────────────────
+  ✅ RENCANA LANJUTAN (NEXT STEP)
+─────────────────────────────────────────────
+  - [ ] Hubungkan ulasan bintang 5 ke komponen 'Testimonials.jsx'.
+  - [ ] Buat folder 'storage' di Supabase untuk file pengerjaan.
+  - [ ] Tambahkan fitur 'Export to PDF' untuk invoice klien.
+
+============================================================
+  STATUS: CORE SYSTEM READY (v5.5)
+  Menunggu instruksi selanjutnya untuk fitur tambahan.
+============================================================
+
+
+ You are a senior software engineer, code auditor, and system reviewer.
+
+   Your task is to fully audit, improve, and maintain this repository using a structured and automated workflow.
+
+   ---
+
+   ## OBJECTIVES
+   1. Perform a deep and complete codebase audit
+   2. Identify bugs, inconsistencies, and improvement areas
+   3. Create structured issues for each finding
+   4. Fix issues in isolated environments
+   5. Validate all fixes
+   6. Create and manage pull requests
+   7. Merge and clean repository
+   8. Ensure final codebase is stable and production-ready
+
+   ---
+
+   ## STEP 1 — FULL CODEBASE AUDIT
+   Scan the entire repository, including:
+   - Frontend (logic, state, structure, performance)
+   - Backend/API (logic correctness, validation, security)
+   - Database layer (queries, schema usage, efficiency)
+   - Configuration files (env, build, deployment)
+   - Code quality (readability, consistency, maintainability)
+
+   Detect:
+   - Bugs and logical errors
+   - Anti-patterns
+   - Performance issues
+   - Security risks
+   - Inconsistent coding styles
+   - Dead or unused code
+
+   ---
+
+   ## STEP 2 — ISSUE CREATION
+   For EACH finding:
+   - Create a GitHub Issue
+   - Each issue must be atomic (1 issue = 1 problem)
+
+   Include:
+   - Title
+   - Clear description
+   - Root cause analysis
+   - File/line reference
+   - Suggested solution
+
+   Apply labels when relevant:
+   - bug
+   - performance
+   - security
+   - refactor
+   - enhancement
+
+   ---
+
+   ## STEP 3 — ISSUE ORGANIZATION
+   - Ensure no duplicated issues
+   - Prioritize issues (critical → minor)
+   - Keep issues independent and solvable
+
+   ---
+
+   ## STEP 4 — ISOLATED FIX (WORKTREE / BRANCH)
+   For each issue:
+   - Create a new branch: fix/<issue-name>
+   - Work in isolation
+   - Follow existing architecture and conventions
+   - Do NOT introduce unrelated changes
+
+   ---
+
+   ## STEP 5 — VALIDATION
+   After implementing a fix:
+   - Run build process
+   - Run linting
+   - Run tests (if available)
+   - Verify no regressions
+
+   If issue is NOT fully resolved:
+   - Iterate until it is completely fixed
+
+   ---
+
+   ## STEP 6 — PULL REQUEST
+   For each completed fix:
+   - Create a Pull Request
+
+   Include:
+   - Clear title
+   - Explanation of the fix
+   - Root cause summary
+   - Testing notes
+
+   ---
+
+   ## STEP 7 — MERGE & CLEANUP
+   After PR approval:
+   - Merge into main branch
+   - Delete feature branch
+
+   ---
+
+   ## STEP 8 — FINAL CHECK
+   - Ensure no unresolved issues remain
+   - Ensure repository builds successfully
+   - Ensure codebase consistency
+
+   Final state must:
+   - Be stable
+   - Be clean
+   - Be production-ready
+   - Contain only the main branch
+
+   ---
+
+   ## RULES
+   - Do NOT skip steps
+   - Do NOT combine multiple issues into one
+   - Always validate before creating PR
+   - Always keep changes minimal and focused
+
+   ---
+
+   ## OUTPUT FORMAT
+   - List of created issues
+   - List of PRs
+   - Final repository status (ALL FIXED / NEEDS REVIEW)
+
+   Begin execution.
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+
+============================================================
+  🚀 UPDATE TERBARU (10 APRIL 2026)
+============================================================
 - Core Order System: READY
 - Admin Dashboard: ENHANCED (Client WA, Description, Admin Tracking)
 - Notification System: UPDATED (Detailed Info, Localized Deadline)
 - Multi-Admin Support: ACTIVE (SuperAdmin Monitoring)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-💡 NEW FEATURE IDEAS (BACKLOG)
+💡 IDE FITUR BARU DASHBOARD ADMIN (PLANNING)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. 📊 REVENUE ANALYTICS (Owner/SuperAdmin Only)
