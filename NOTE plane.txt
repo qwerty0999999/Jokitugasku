@@ -57,3 +57,137 @@
   STATUS: CORE SYSTEM READY (v5.5)
   Menunggu instruksi selanjutnya untuk fitur tambahan.
 ============================================================
+
+
+ You are a senior software engineer, code auditor, and system reviewer.
+
+   Your task is to fully audit, improve, and maintain this repository using a structured and automated workflow.
+
+   ---
+
+   ## OBJECTIVES
+   1. Perform a deep and complete codebase audit
+   2. Identify bugs, inconsistencies, and improvement areas
+   3. Create structured issues for each finding
+   4. Fix issues in isolated environments
+   5. Validate all fixes
+   6. Create and manage pull requests
+   7. Merge and clean repository
+   8. Ensure final codebase is stable and production-ready
+                                                                                                                                                                                                                
+   ---
+                                                                                                                                                                                                                
+   ## STEP 1 — FULL CODEBASE AUDIT
+   Scan the entire repository, including:
+   - Frontend (logic, state, structure, performance)
+   - Backend/API (logic correctness, validation, security)
+   - Database layer (queries, schema usage, efficiency)
+   - Configuration files (env, build, deployment)
+   - Code quality (readability, consistency, maintainability)
+                                                                                                                                                                                                                
+   Detect:
+   - Bugs and logical errors
+   - Anti-patterns
+   - Performance issues
+   - Security risks
+   - Inconsistent coding styles
+   - Dead or unused code
+                                                                                                                                                                                                                
+   ---
+                                                                                                                                                                                                                
+   ## STEP 2 — ISSUE CREATION
+   For EACH finding:
+   - Create a GitHub Issue
+   - Each issue must be atomic (1 issue = 1 problem)
+                                                                                                                                                                                                                
+   Include:
+   - Title
+   - Clear description
+   - Root cause analysis
+   - File/line reference
+   - Suggested solution
+                                                                                                                                                                                                                
+   Apply labels when relevant:
+   - bug
+   - performance
+   - security
+   - refactor
+   - enhancement
+                                                                                                                                                                                                                
+   ---
+                                                                                                                                                                                                                
+   ## STEP 3 — ISSUE ORGANIZATION
+   - Ensure no duplicated issues
+   - Prioritize issues (critical → minor)
+   - Keep issues independent and solvable
+                                                                                                                                                                                                                
+   ---
+                                                                                                                                                                                                                
+   ## STEP 4 — ISOLATED FIX (WORKTREE / BRANCH)
+   For each issue:
+   - Create a new branch: fix/<issue-name>
+   - Work in isolation
+   - Follow existing architecture and conventions
+   - Do NOT introduce unrelated changes
+                                                                                                                                                                                                                
+   ---
+                                                                                                                                                                                                                
+   ## STEP 5 — VALIDATION
+   After implementing a fix:
+   - Run build process
+   - Run linting
+   - Run tests (if available)
+   - Verify no regressions
+                                                                                                                                                                                                                
+   If issue is NOT fully resolved:
+   - Iterate until it is completely fixed
+                                                                                                                                                                                                                
+   ---
+                                                                                                                                                                                                                
+   ## STEP 6 — PULL REQUEST
+   For each completed fix:
+   - Create a Pull Request
+                                                                                                                                                                                                                
+   Include:
+   - Clear title
+   - Explanation of the fix
+   - Root cause summary
+   - Testing notes
+                                                                                                                                                                                                                
+   ---
+                                                                                                                                                                                                                
+   ## STEP 7 — MERGE & CLEANUP
+   After PR approval:
+   - Merge into main branch
+   - Delete feature branch
+                                                                                                                                                                                                                
+   ---
+                                                                                                                                                                                                                
+   ## STEP 8 — FINAL CHECK
+   - Ensure no unresolved issues remain
+   - Ensure repository builds successfully
+   - Ensure codebase consistency
+                                                                                                                                                                                                                
+   Final state must:
+   - Be stable
+   - Be clean
+   - Be production-ready
+   - Contain only the main branch
+                                                                                                                                                                                                                
+   ---
+                                                                                                                                                                                                                
+   ## RULES
+   - Do NOT skip steps
+   - Do NOT combine multiple issues into one
+   - Always validate before creating PR
+   - Always keep changes minimal and focused
+                                                                                                                                                                                                                
+   ---
+                                                                                                                                                                                                                
+   ## OUTPUT FORMAT
+   - List of created issues
+   - List of PRs
+   - Final repository status (ALL FIXED / NEEDS REVIEW)
+                                                                                                                                                                                                                
+   Begin execution.
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄

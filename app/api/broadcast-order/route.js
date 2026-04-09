@@ -33,6 +33,7 @@ export async function POST(req) {
 ━━━━━━━━━━━━━━━━━━
 👤 *Admin:* ${adminName || 'Admin'}
 🎫 *Tiket:* ${orderData.order_code}
+👤 *Klien:* ${orderData.client_name || '-'}
 🛠️ *Layanan:* ${orderData.service}
 ━━━━━━━━━━━━━━━━━━
 🚀 *Status:* ${(orderData.status || 'PROSES').toUpperCase()}
@@ -40,12 +41,27 @@ export async function POST(req) {
 _Semangat pengerjaannya! Fokus berikan hasil terbaik untuk klien. 💪✨_`
     } else {
       // DEFAULT: NEW_ORDER
+      const deadlineStr = orderData.deadline 
+        ? new Date(orderData.deadline).toLocaleString('id-ID', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          }) 
+        : 'Flexible'
+
       message = `*🔔 PESANAN BARU MASUK!*
 ━━━━━━━━━━━━━━━━━━
 🎫 *Kode:* ${orderData.order_code}
 👤 *Klien:* ${orderData.client_name}
+📞 *WA:* ${orderData.client_phone || '-'}
 🛠️ *Layanan:* ${orderData.service}
-⏰ *Deadline:* ${orderData.deadline || 'Flexible'}
+⏰ *Deadline:* ${deadlineStr}
+━━━━━━━━━━━━━━━━━━
+📝 *Deskripsi:*
+${orderData.description || '-'}
 ━━━━━━━━━━━━━━━━━━
 
 🔥 *Segera proses di Dashboard:*
