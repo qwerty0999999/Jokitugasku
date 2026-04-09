@@ -5,8 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Send, AlertCircle, CheckCircle, Copy, Check, ExternalLink, ClipboardList, MessageSquare, Search } from 'lucide-react'
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
-
-const WA_NUMBER = '6289524894059'
+import { WA_NUMBER } from '@/lib/constants'
 
 const serviceOptions = [
   { value: 'Joki Tugas (Resume/Laporan)', label: '📄 Joki Tugas (Resume/Laporan)' },

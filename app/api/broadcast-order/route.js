@@ -5,8 +5,16 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(req) {
   try {
-    const { orderData, type, adminName } = await req.json()
-    
+    const body = await req.json().catch(() => null)
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ message: 'Invalid request body' }, { status: 400 })
+    }
+
+    const { orderData, type, adminName } = body
+
+    if (!orderData || typeof orderData !== 'object' || !orderData.order_code) {
+      return NextResponse.json({ message: 'orderData is required and must contain order_code' }, { status: 400 })
+    }
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY

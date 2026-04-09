@@ -6,6 +6,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Menu, X, Search } from 'lucide-react'
+import { WA_NUMBER } from '@/lib/constants'
 
 const navLinks = [
   { href: '#services', label: 'Layanan' },
@@ -15,8 +16,6 @@ const navLinks = [
   { href: '#pricing', label: 'Harga' },
   { href: '#faq', label: 'FAQ' },
 ]
-
-const WA_NUMBER = '6289524894059'
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)

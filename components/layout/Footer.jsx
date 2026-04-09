@@ -1,6 +1,5 @@
 import Image from 'next/image'
-
-const WA_NUMBER = '6289524894059'
+import { WA_NUMBER } from '@/lib/constants'
 
 const footerLinks = {
   layanan: [
@@ -27,8 +26,6 @@ const contactItems = [
 ]
 
 const socials = [
-  { icon: '📸', label: 'Instagram', href: '#' },
-  { icon: '🎵', label: 'TikTok', href: '#' },
   { icon: '💬', label: 'WhatsApp', href: `https://wa.me/${WA_NUMBER}`, external: true },
   { icon: '✈️', label: 'Telegram', href: 'https://t.me/jokitugasku', external: true },
 ]

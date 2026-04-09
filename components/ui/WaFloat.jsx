@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-
-const WA_NUMBER = '6281234567890'
+import { WA_NUMBER } from '@/lib/constants'
 
 export default function WaFloat() {
   const [visible, setVisible] = useState(false)

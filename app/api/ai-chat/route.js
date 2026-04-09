@@ -1,4 +1,5 @@
 import { GoogleGenAI } from '@google/genai'
+import { WA_NUMBER, WA_BASE_URL } from '@/lib/constants'
 
 const systemPrompt = `Role: CS Jokitugasku.
 Rules:
@@ -9,7 +10,7 @@ Rules:
 5. Goal: Arahkan ke WA wa.me/6289524894059.
 Gaya: Singkat, ramah, to-the-point.`
 
-const WA_LINK = 'wa.me/6289524894059'
+const WA_LINK = `${WA_BASE_URL}?text=Halo%20Jokitugasku!`
 
 // ─── FALLBACK RULES ───────────────────────────────────────────────────────────
 // Dipakai saat API Gemini error / tidak tersedia

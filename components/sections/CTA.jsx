@@ -1,8 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-
-const WA_NUMBER = '6289524894059'
+import { WA_NUMBER } from '@/lib/constants'
 
 export default function CTA() {
   return (
