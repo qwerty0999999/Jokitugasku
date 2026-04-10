@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, CheckCircle2, Clock, Loader2, AlertCircle, RotateCcw, Star, CalendarClock, Download } from 'lucide-react'
+import { Search, CheckCircle2, Clock, Loader2, AlertCircle, RotateCcw, Star, CalendarClock, Download, Upload, Receipt } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import RatingModal from '@/components/ui/RatingModal'
+import { toast } from 'sonner'
 
 const statusConfig = {
   pending: {
@@ -169,6 +170,7 @@ export default function TrackingWidget({ initialCode = '' }) {
   const [inputCode, setInputCode] = useState(initialCode)
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [uploadingPayment, setUploadingPayment] = useState(false)
   const [error, setError] = useState('')
   const [lastUpdated, setLastUpdated] = useState(null)
   const [existingRating, setExistingRating] = useState(null)
@@ -238,6 +240,46 @@ export default function TrackingWidget({ initialCode = '' }) {
   const handleSearch = (e) => {
     e.preventDefault()
     fetchOrder(inputCode)
+  }
+
+  const handlePaymentUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file || !order) return
+
+    setUploadingPayment(true)
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${order.order_code}_receipt_${Math.random().toString(36).substring(7)}.${fileExt}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('payment-receipts')
+        .upload(fileName, file)
+
+      if (uploadError) throw uploadError
+
+      const { data: downloadData } = supabase.storage
+        .from('payment-receipts')
+        .getPublicUrl(fileName)
+      
+      const publicUrl = downloadData.publicUrl
+
+      const res = await fetch('/api/payment-receipt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_code: order.order_code, payment_receipt_url: publicUrl })
+      })
+      const result = await res.json()
+      if (!res.ok) throw new Error(result.error)
+
+      setOrder(prev => ({ ...prev, payment_receipt_url: publicUrl }))
+      toast.success('Bukti pembayaran berhasil diunggah. Menunggu verifikasi admin.')
+    } catch (err) {
+      console.error(err)
+      toast.error('Gagal mengunggah bukti pembayaran: ' + err.message)
+      setError('Gagal mengunggah bukti pembayaran: ' + err.message)
+    } finally {
+      setUploadingPayment(false)
+    }
   }
 
   const cfg = order ? (statusConfig[order.status] ?? statusConfig.pending) : null
@@ -387,6 +429,50 @@ export default function TrackingWidget({ initialCode = '' }) {
                     💬 Catatan Tim
                   </div>
                   <p className="text-gray-700 text-xs sm:text-sm leading-relaxed">{order.notes}</p>
+                </div>
+              )}
+
+              {/* Payment Upload Section */}
+              {!order.is_paid && order.status !== 'pending' && order.status !== 'done' && (
+                <div className="mt-2 p-4 sm:p-5 bg-indigo-50 border border-indigo-100 rounded-2xl flex flex-col gap-3 shadow-sm">
+                  <div className="flex items-center gap-3 mb-1">
+                    <div className="w-10 h-10 bg-indigo-500 text-white rounded-xl flex items-center justify-center shadow-md shadow-indigo-200">
+                      <Receipt size={20} />
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-indigo-900">Konfirmasi Pembayaran</div>
+                      <div className="text-[10px] text-indigo-600 font-medium">Unggah bukti transfer untuk mempercepat proses</div>
+                    </div>
+                  </div>
+                  
+                  {order.payment_receipt_url ? (
+                    <div className="bg-white/60 rounded-xl p-3 border border-indigo-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-semibold text-indigo-800">
+                      <span className="flex items-center gap-2">
+                        <CheckCircle2 size={16} className="text-emerald-500" /> Menunggu verifikasi admin
+                      </span>
+                      <a href={order.payment_receipt_url} target="_blank" rel="noreferrer" className="text-indigo-600 hover:text-indigo-700 underline text-center sm:text-left">Lihat file terunggah</a>
+                    </div>
+                  ) : (
+                    <div className="relative mt-1">
+                      <input 
+                        type="file" 
+                        accept="image/*,.pdf"
+                        onChange={handlePaymentUpload} 
+                        disabled={uploadingPayment}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed" 
+                      />
+                      <div className={`w-full p-4 border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-2 transition-all ${uploadingPayment ? 'bg-indigo-100 border-indigo-300' : 'bg-white border-indigo-200 hover:border-indigo-400 hover:bg-indigo-50/50'}`}>
+                        {uploadingPayment ? (
+                          <Loader2 size={24} className="animate-spin text-indigo-500" />
+                        ) : (
+                          <Upload size={24} className="text-indigo-400" />
+                        )}
+                        <span className="text-xs font-bold text-indigo-700 text-center">
+                          {uploadingPayment ? 'Sedang Mengunggah...' : 'Pilih File Bukti Transfer (Gambar/PDF)'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

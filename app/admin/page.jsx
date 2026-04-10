@@ -9,7 +9,7 @@ import {
   RotateCcw, Search, ChevronDown, Save, Star, TrendingUp,
   Package, Activity, LayoutDashboard, Users, Settings,
   DollarSign, Check, X, Plus, Edit3, Shield, AlertCircle,
-  Hash, User, Briefcase, Key, Trash2, MessageCircle, FileUp, Download
+  Hash, User, Briefcase, Key, Trash2, MessageCircle, FileUp, Download, Receipt
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 

@@ -20,6 +20,8 @@ CREATE TABLE IF NOT EXISTS orders (
   revision_count INT DEFAULT 0,
   processed_by  TEXT,                        -- Email admin yang menangani order ini
   file_url      TEXT,                        -- Link file hasil pengerjaan (Supabase Storage)
+  payment_receipt_url TEXT,                  -- Link file bukti pembayaran
+  is_paid       BOOLEAN DEFAULT FALSE,       -- Status pembayaran Lunas/Belum
   created_at    TIMESTAMPTZ DEFAULT NOW(),
   updated_at    TIMESTAMPTZ DEFAULT NOW()
 );
