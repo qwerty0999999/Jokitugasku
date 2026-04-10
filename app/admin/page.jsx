@@ -391,7 +391,9 @@ function OrderCard({ order, onSave, currentAdminEmail, adminName, isSuperAdmin }
     progress: order.progress || 0,
     price: order.price || 0,
     notes: order.notes || '',
-    file_url: order.file_url || ''
+    file_url: order.file_url || '',
+    is_paid: order.is_paid || false,
+    payment_receipt_url: order.payment_receipt_url || ''
   })
 
   useEffect(() => {
@@ -400,7 +402,9 @@ function OrderCard({ order, onSave, currentAdminEmail, adminName, isSuperAdmin }
       progress: order.progress || 0,
       price: order.price || 0,
       notes: order.notes || '',
-      file_url: order.file_url || ''
+      file_url: order.file_url || '',
+      is_paid: order.is_paid || false,
+      payment_receipt_url: order.payment_receipt_url || ''
     })
   }, [order])
 
@@ -437,11 +441,6 @@ function OrderCard({ order, onSave, currentAdminEmail, adminName, isSuperAdmin }
       
       const publicUrl = downloadData.publicUrl
 
-      // Cek apakah bucket public atau private secara visual di admin
-      if (!publicUrl.includes('/public/')) {
-        toast.warning('Peringatan: URL tidak mengandung "/public/". Pastikan bucket "order-files" diatur ke PUBLIC di Supabase Dashboard.')
-      }
-
       const { error: updateError } = await supabase
         .from('orders')
         .update({ file_url: publicUrl })
@@ -466,13 +465,14 @@ function OrderCard({ order, onSave, currentAdminEmail, adminName, isSuperAdmin }
       progress: Number(formData.progress), 
       price: Number(formData.price), 
       notes: formData.notes, 
+      is_paid: formData.is_paid,
       processed_by: currentAdminEmail, 
       updated_at: new Date().toISOString() 
     }
 
     if (type === 'dp') { up.status = 'in_progress'; up.progress = 50 }
     else if (type === 'review') { up.status = 'review'; up.progress = 90 }
-    else if (type === 'full') { up.status = 'done'; up.progress = 100 }
+    else if (type === 'full') { up.status = 'done'; up.progress = 100; up.is_paid = true }
     else if (order.status === 'pending' && up.status === 'pending') { 
       up.status = 'confirmed'; up.progress = 20 
     }
@@ -484,18 +484,16 @@ function OrderCard({ order, onSave, currentAdminEmail, adminName, isSuperAdmin }
       return
     }
 
-    // BROADCAST: Jika tiket diambil (status berubah dari pending atau pertama kali diproses)
-    if (order.status === 'pending' || !order.processed_by) {
-      fetch('/api/broadcast-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          orderData: { ...order, status: up.status }, 
-          type: 'CLAIM_ORDER',
-          adminName: adminName || 'Admin'
-        }),
-      }).catch(err => console.error('Broadcast Claim Error:', err))
-    }
+    // BROADCAST: Kirim notifikasi ke grup WhatsApp untuk setiap perubahan penting
+    fetch('/api/broadcast-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        orderData: { ...order, ...up }, 
+        type: (order.status === 'pending' || !order.processed_by) ? 'CLAIM_ORDER' : 'UPDATE_STATUS',
+        adminName: adminName || 'Admin'
+      }),
+    }).catch(err => console.error('Broadcast Error:', err))
 
     onSave()
 
@@ -597,8 +595,18 @@ function OrderCard({ order, onSave, currentAdminEmail, adminName, isSuperAdmin }
           <div className="flex items-center gap-3 mb-1">
             <h3 className="text-base sm:text-lg font-bold text-slate-900 truncate">{order.service}</h3>
             <StatusBadge status={order.status} />
+            {order.payment_receipt_url && !order.is_paid && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-200">
+                <Receipt size={10} /> Cek Bukti Bayar
+              </span>
+            )}
+            {order.is_paid && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200">
+                <CheckCircle size={10} /> Lunas
+              </span>
+            )}
           </div>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
             <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
               <User size={14} className="text-slate-400"/> {order.client_name}
             </div>
@@ -710,7 +718,34 @@ function OrderCard({ order, onSave, currentAdminEmail, adminName, isSuperAdmin }
                       </a>
                     )}
                   </div>
-                  <p className="text-[10px] text-slate-400 font-medium">File yang diunggah akan dapat langsung diunduh oleh klien melalui halaman tracking.</p>
+                </div>
+
+                {/* Payment Verification Section */}
+                <div className="space-y-2 md:col-span-2 pt-2 border-t border-slate-200">
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-2 mb-2">
+                    <Receipt size={14} className="text-emerald-500" /> Verifikasi Pembayaran
+                  </label>
+                  <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                    {formData.payment_receipt_url ? (
+                      <a href={formData.payment_receipt_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-4 py-3 bg-indigo-50 text-indigo-700 rounded-xl text-sm font-bold border border-indigo-200 hover:bg-indigo-100 transition-all flex-1 justify-center sm:justify-start">
+                        <Download size={18} /> Lihat Bukti Transfer Klien
+                      </a>
+                    ) : (
+                      <div className="px-4 py-3 bg-slate-50 text-slate-400 rounded-xl text-sm font-medium border border-slate-200 flex-1 flex items-center gap-2">
+                        Belum ada bukti transfer diunggah.
+                      </div>
+                    )}
+                    
+                    <label className="flex items-center gap-3 cursor-pointer p-3 bg-white border border-slate-200 rounded-xl shadow-sm hover:border-emerald-300 transition-all">
+                      <input 
+                        type="checkbox" 
+                        checked={formData.is_paid} 
+                        onChange={e => setFormData({ ...formData, is_paid: e.target.checked })} 
+                        className="w-5 h-5 accent-emerald-600 rounded cursor-pointer"
+                      />
+                      <span className="text-sm font-bold text-slate-700">Tandai Lunas</span>
+                    </label>
+                  </div>
                 </div>
               </div>
 
