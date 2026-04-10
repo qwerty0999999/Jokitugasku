@@ -221,14 +221,40 @@ export default function TrackingWidget({ initialCode = '' }) {
     }
   }, [])
 
-  // Smart Polling (Setiap 15 detik) untuk menggantikan koneksi Realtime yang berisiko
+  // ── SISTEM REAL-TIME (Supabase Channel) ───────────────────────────
+  useEffect(() => {
+    if (!order?.order_code || !isSupabaseReady) return
+
+    const channel = supabase
+      .channel(`order-changes-${order.order_code}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `order_code=eq.${order.order_code}`,
+        },
+        (payload) => {
+          console.log('Real-time update received:', payload.new)
+          setOrder(payload.new)
+          setLastUpdated(new Date())
+          toast.info('Status pesanan diperbarui!', { icon: '🔄' })
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [order?.order_code, isSupabaseReady])
+
+  // Polling cadangan tetap ada (setiap 1 menit saja) jika Real-time terputus
   useEffect(() => {
     if (!order) return
-    
     const interval = setInterval(() => {
       fetchOrder(order.order_code, true)
-    }, 15000)
-
+    }, 60000)
     return () => clearInterval(interval)
   }, [order, fetchOrder])
 
