@@ -477,10 +477,18 @@ function OrderCard({ order, onSave, currentAdminEmail, adminName, isSuperAdmin }
       up.status = 'confirmed'; up.progress = 20 
     }
 
-    const { error } = await supabase.from('orders').update(up).eq('order_code', order.order_code)
-    if (error) {
-      console.error('Update Order Error:', error)
-      toast.error('Gagal Update Database: ' + error.message)
+    // UPDATE VIA SERVER API (ByPass RLS)
+    const updateRes = await fetch('/api/admin/update-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order_code: order.order_code, updates: up })
+    })
+
+    const updateResult = await updateRes.json()
+
+    if (!updateRes.ok) {
+      console.error('Update Order Error:', updateResult.error)
+      toast.error('Gagal Update Database: ' + (updateResult.error || 'Terjadi kesalahan'))
       setLoading(false)
       return
     }
