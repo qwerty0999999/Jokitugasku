@@ -14,15 +14,21 @@ export async function GET(req) {
 
     const supabaseAdmin = getSupabaseAdmin()
 
-    // Tarik data order (Case-Insensitive Search menggunakan ilike)
+    // Tarik data order (Gunakan maybeSingle agar tidak error jika kosong)
     const { data: order, error } = await supabaseAdmin
       .from('orders')
       .select('id, order_code, service, client_name, status, progress, deadline, notes, file_url, payment_receipt_url, is_paid')
       .ilike('order_code', code.trim())
-      .single()
+      .maybeSingle()
 
-    if (error || !order) {
-      return NextResponse.json({ error: 'Kode order tidak ditemukan.' }, { status: 404 })
+    if (error) {
+      console.error('Database Error:', error.message)
+      return NextResponse.json({ error: 'Terjadi kesalahan saat mengambil data.' }, { status: 500 })
+    }
+
+    if (!order) {
+      console.warn(`Order tidak ditemukan untuk kode: ${code}`)
+      return NextResponse.json({ error: 'Kode order tidak ditemukan. Pastikan kode benar.' }, { status: 404 })
     }
 
     // Jika status "Selesai", cari rating
