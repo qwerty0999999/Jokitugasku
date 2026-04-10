@@ -479,7 +479,8 @@ function OrderCard({ order, onSave, currentAdminEmail, adminName, isSuperAdmin }
 
     const { error } = await supabase.from('orders').update(up).eq('order_code', order.order_code)
     if (error) {
-      toast.error(error.message)
+      console.error('Update Order Error:', error)
+      toast.error('Gagal Update Database: ' + error.message)
       setLoading(false)
       return
     }

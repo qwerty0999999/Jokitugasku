@@ -64,6 +64,7 @@ export async function POST(req) {
         email,
         password,
         user_metadata: { full_name: name },
+        app_metadata: { role: 'admin' }, // Tambahkan ini agar RLS mengizinkan akses
         email_confirm: true
       })
       if (error) throw error
