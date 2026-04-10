@@ -1270,7 +1270,7 @@ export default function AdminPage() {
   useEffect(() => {
     let isMounted = true
 
-    // Meredam error "message channel closed" dari ekstensi browser (Chrome Extension noise)
+    // Meredam error noise browser
     const handleUnhandledRejection = (event) => {
       if (event.reason?.message?.includes('message channel closed') || 
           event.reason?.message?.includes('A listener indicated an asynchronous response')) {
@@ -1299,7 +1299,22 @@ export default function AdminPage() {
     }
     init()
 
-    // 2. Auth State Listener
+    // 2. Realtime Subscription (Admin Side)
+    const ordersChannel = supabase
+      .channel('admin-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+        console.log('Realtime change in orders table')
+        fetchAllData()
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ratings' }, () => {
+        fetchAllData()
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'revisions' }, () => {
+        fetchAllData()
+      })
+      .subscribe()
+
+    // 3. Auth State Listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, s) => { 
       if (!isMounted) return
       
@@ -1313,26 +1328,24 @@ export default function AdminPage() {
       }
     })
 
-    // 3. Security: Re-validate session when window is focused
+    // 4. Security: Re-validate session
     const handleFocus = async () => {
       if (!isMounted || isLoggingIn) return
-      
       try {
         const { data: { session: currentSession } } = await supabase.auth.getSession()
         if (!currentSession) {
           await supabase.auth.signOut()
           setSession(null)
-          toast.error('Sesi Anda telah berakhir. Silakan login kembali untuk keamanan.')
+          toast.error('Sesi berakhir.')
         }
-      } catch (err) {
-        // Silently fail to avoid console noise
-      }
+      } catch (err) {}
     }
 
     window.addEventListener('focus', handleFocus)
 
     return () => {
       isMounted = false
+      supabase.removeChannel(ordersChannel)
       subscription.unsubscribe()
       window.removeEventListener('focus', handleFocus)
       window.removeEventListener('unhandledrejection', handleUnhandledRejection)
