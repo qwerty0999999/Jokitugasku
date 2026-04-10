@@ -518,7 +518,7 @@ function OrderCard({ order, onSave, currentAdminEmail, adminName, isSuperAdmin }
         msg = `*PROSES REVISI*\n----------------------------------\nHalo ${order.client_name}, permintaan revisi untuk tiket *${order.order_code}* sedang dikerjakan ulang. Terima kasih.`; 
         break
       case 'done': 
-        msg = `*PEMBAYARAN LUNAS & SELESAI*\n----------------------------------\nTerima kasih ${order.client_name}! Pengerjaan tiket *${order.order_code}* tuntas sepenuhnya. File final segera dikirim. 🙏✨`; 
+        msg = `*PEMBAYARAN LUNAS & SELESAI*\n----------------------------------\nTerima kasih ${order.client_name}! Pengerjaan tiket *${order.order_code}* tuntas sepenuhnya.${formData.file_url ? `\n\n*Link Unduhan File:*\n${formData.file_url}` : '\nFile final segera dikirim.'} 🙏✨`; 
         break
       default: 
         msg = `Halo ${order.client_name}, ini Admin Jokitugasku terkait tiket ${order.order_code}.`; 
