@@ -431,13 +431,15 @@ function OrderCard({ order, onSave, currentAdminEmail, adminName, isSuperAdmin }
 
       if (uploadError) throw uploadError
 
-      const { data: { publicUrl } } = supabase.storage
+      const { data: downloadData } = supabase.storage
         .from('order-files')
         .getPublicUrl(filePath)
+      
+      const publicUrl = downloadData.publicUrl
 
-      // Cek apakah bucket public atau private
+      // Cek apakah bucket public atau private secara visual di admin
       if (!publicUrl.includes('/public/')) {
-        toast.warning('Peringatan: Bucket Storage mungkin bersifat Private. Pastikan bucket "order-files" diatur ke PUBLIC agar klien bisa mengunduh file.')
+        toast.warning('Peringatan: URL tidak mengandung "/public/". Pastikan bucket "order-files" diatur ke PUBLIC di Supabase Dashboard.')
       }
 
       const { error: updateError } = await supabase

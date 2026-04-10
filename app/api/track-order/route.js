@@ -17,7 +17,7 @@ export async function GET(req) {
     // Tarik data order (Sensor Data Sensitif Seperti Nomor HP dan Harga)
     const { data: order, error } = await supabaseAdmin
       .from('orders')
-      .select('id, order_code, service, client_name, status, progress, deadline, notes')
+      .select('id, order_code, service, client_name, status, progress, deadline, notes, file_url')
       .eq('order_code', code.trim().toUpperCase())
       .single()
 
