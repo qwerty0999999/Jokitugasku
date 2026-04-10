@@ -15,18 +15,16 @@
 ─────────────────────────────────────────────
   ⚠️ PENDING & BELUM DIKERJAKAN
 ─────────────────────────────────────────────
-  1. INTEGRASI TESTIMONIAL REAL-TIME
-     - Tugas: Menampilkan ulasan bintang 5 dari database langsung ke
-       halaman depan (Landing Page) agar calon klien lebih percaya.
+  1. [x] INTEGRASI TESTIMONIAL REAL-TIME
+     - Selesai: Ulasan otomatis muncul via Supabase Channel.
 
   2. DASHBOARD USER (PENYEMPURNAAN)
      - Tugas: Membuat halaman khusus bagi klien untuk melihat riwayat
        pesanan mereka sendiri dan mendownload nota/invoice resmi.
 
-  3. SISTEM UPLOAD FILE INTERNAL
-     - Tugas: Menambahkan tombol upload di detail order (admin) agar
-       file hasil kerja (watermark/final) bisa disimpan di Supabase Storage
-       dan diakses langsung oleh klien.
+  3. [x] SISTEM UPLOAD FILE INTERNAL
+     - Selesai: Admin bisa upload hasil pengerjaan ke Storage dan klien
+       bisa mendownloadnya di halaman pelacakan.
 
   4. AUTOMATED EMAIL RECEIPT
      - Tugas: Mengirimkan struk pembayaran otomatis ke email klien
@@ -49,12 +47,12 @@
 ─────────────────────────────────────────────
   ✅ RENCANA LANJUTAN (NEXT STEP)
 ─────────────────────────────────────────────
-  - [ ] Hubungkan ulasan bintang 5 ke komponen 'Testimonials.jsx'.
-  - [ ] Buat folder 'storage' di Supabase untuk file pengerjaan.
+  - [x] Hubungkan ulasan bintang 5 ke komponen 'Testimonials.jsx'.
+  - [x] Buat folder 'storage' di Supabase untuk file pengerjaan.
   - [ ] Tambahkan fitur 'Export to PDF' untuk invoice klien.
 
 ============================================================
-  STATUS: CORE SYSTEM READY (v5.5)
+  STATUS: CORE SYSTEM READY (v6.1)
   Menunggu instruksi selanjutnya untuk fitur tambahan.
 ============================================================
 

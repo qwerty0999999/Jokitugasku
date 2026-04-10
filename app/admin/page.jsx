@@ -435,6 +435,11 @@ function OrderCard({ order, onSave, currentAdminEmail, adminName, isSuperAdmin }
         .from('order-files')
         .getPublicUrl(filePath)
 
+      // Cek apakah bucket public atau private
+      if (!publicUrl.includes('/public/')) {
+        toast.warning('Peringatan: Bucket Storage mungkin bersifat Private. Pastikan bucket "order-files" diatur ke PUBLIC agar klien bisa mengunduh file.')
+      }
+
       const { error: updateError } = await supabase
         .from('orders')
         .update({ file_url: publicUrl })
@@ -1219,18 +1224,32 @@ export default function AdminPage() {
   useEffect(() => {
     let isMounted = true
 
+    // Meredam error "message channel closed" dari ekstensi browser (Chrome Extension noise)
+    const handleUnhandledRejection = (event) => {
+      if (event.reason?.message?.includes('message channel closed') || 
+          event.reason?.message?.includes('A listener indicated an asynchronous response')) {
+        event.preventDefault()
+      }
+    }
+    window.addEventListener('unhandledrejection', handleUnhandledRejection)
+
     // 1. Initial Session Check & Data Fetch
     const init = async () => {
-      const { data: { session: s }, error } = await supabase.auth.getSession()
-      if (!isMounted) return
+      try {
+        const { data: { session: s }, error } = await supabase.auth.getSession()
+        if (!isMounted) return
 
-      if (error || !s) {
-        setSession(null)
-      } else {
-        setSession(s)
-        fetchAllData()
+        if (error || !s) {
+          setSession(null)
+        } else {
+          setSession(s)
+          await fetchAllData()
+        }
+      } catch (err) {
+        console.warn('Auth Init Error:', err)
+      } finally {
+        if (isMounted) setCheckingAuth(false)
       }
-      setCheckingAuth(false)
     }
     init()
 
@@ -1252,11 +1271,15 @@ export default function AdminPage() {
     const handleFocus = async () => {
       if (!isMounted || isLoggingIn) return
       
-      const { data: { session: currentSession } } = await supabase.auth.getSession()
-      if (!currentSession) {
-        await supabase.auth.signOut()
-        setSession(null)
-        toast.error('Sesi Anda telah berakhir. Silakan login kembali untuk keamanan.')
+      try {
+        const { data: { session: currentSession } } = await supabase.auth.getSession()
+        if (!currentSession) {
+          await supabase.auth.signOut()
+          setSession(null)
+          toast.error('Sesi Anda telah berakhir. Silakan login kembali untuk keamanan.')
+        }
+      } catch (err) {
+        // Silently fail to avoid console noise
       }
     }
 
@@ -1266,6 +1289,7 @@ export default function AdminPage() {
       isMounted = false
       subscription.unsubscribe()
       window.removeEventListener('focus', handleFocus)
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchAllData])
