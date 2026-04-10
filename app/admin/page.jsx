@@ -9,7 +9,7 @@ import {
   RotateCcw, Search, ChevronDown, Save, Star, TrendingUp,
   Package, Activity, LayoutDashboard, Users, Settings,
   DollarSign, Check, X, Plus, Edit3, Shield, AlertCircle,
-  Hash, User, Briefcase, Key, Trash2, MessageCircle
+  Hash, User, Briefcase, Key, Trash2, MessageCircle, FileUp, Download
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
@@ -384,12 +384,14 @@ function OTPModal({ isOpen, onClose, onConfirm, loading }) {
 function OrderCard({ order, onSave, currentAdminEmail, adminName, isSuperAdmin }) {
   const [expanded, setExpanded] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [showOtpModal, setShowOtpModal] = useState(false)
   const [formData, setFormData] = useState({
     status: order.status,
     progress: order.progress || 0,
     price: order.price || 0,
-    notes: order.notes || ''
+    notes: order.notes || '',
+    file_url: order.file_url || ''
   })
 
   useEffect(() => {
@@ -397,7 +399,8 @@ function OrderCard({ order, onSave, currentAdminEmail, adminName, isSuperAdmin }
       status: order.status,
       progress: order.progress || 0,
       price: order.price || 0,
-      notes: order.notes || ''
+      notes: order.notes || '',
+      file_url: order.file_url || ''
     })
   }, [order])
 
@@ -410,6 +413,43 @@ function OrderCard({ order, onSave, currentAdminEmail, adminName, isSuperAdmin }
     else if (newStatus === 'review') autoProgress = 90
     else if (newStatus === 'done') autoProgress = 100
     setFormData({ ...formData, status: newStatus, progress: autoProgress })
+  }
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploading(true)
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${order.order_code}_${Math.random().toString(36).substring(7)}.${fileExt}`
+      const filePath = `${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('order-files')
+        .upload(filePath, file)
+
+      if (uploadError) throw uploadError
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('order-files')
+        .getPublicUrl(filePath)
+
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({ file_url: publicUrl })
+        .eq('order_code', order.order_code)
+
+      if (updateError) throw updateError
+
+      setFormData(prev => ({ ...prev, file_url: publicUrl }))
+      toast.success('File berhasil diunggah!')
+      onSave()
+    } catch (err) {
+      toast.error('Gagal upload: ' + err.message)
+    } finally {
+      setUploading(false)
+    }
   }
 
   const handleUpdateAndChat = async (type = 'manual') => {
@@ -625,6 +665,45 @@ function OrderCard({ order, onSave, currentAdminEmail, adminName, isSuperAdmin }
                 <div className="space-y-2">
                   <label className="text-xs font-semibold text-slate-600">Catatan / Tracking</label>
                   <input type="text" value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} className="w-full p-3 bg-white border border-slate-300 rounded-xl text-sm font-medium shadow-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all" placeholder="Misal: Sedang mencari referensi..." />
+                </div>
+                
+                {/* File Upload Section */}
+                <div className="space-y-2 md:col-span-2 pt-2 border-t border-slate-200">
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-2 mb-2">
+                    <FileUp size={14} className="text-blue-500" /> Hasil Pengerjaan (File Final)
+                  </label>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                    <div className="relative flex-1 w-full">
+                      <input 
+                        type="file" 
+                        onChange={handleFileUpload} 
+                        disabled={uploading}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed" 
+                      />
+                      <div className={`w-full p-4 border-2 border-dashed rounded-xl flex items-center justify-center gap-3 transition-all ${uploading ? 'bg-slate-100 border-slate-300' : 'bg-white border-blue-200 hover:border-blue-400 hover:bg-blue-50/30'}`}>
+                        {uploading ? (
+                          <Loader2 size={20} className="animate-spin text-blue-500" />
+                        ) : (
+                          <FileUp size={20} className="text-blue-500" />
+                        )}
+                        <span className="text-sm font-bold text-slate-600">
+                          {uploading ? 'Sedang Mengunggah...' : 'Pilih atau Seret File ke Sini'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {formData.file_url && (
+                      <a 
+                        href={formData.file_url} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="flex items-center gap-2 px-5 py-4 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-sm font-bold hover:bg-emerald-100 transition-all w-full sm:w-auto justify-center"
+                      >
+                        <Download size={18} /> Lihat/Unduh Hasil
+                      </a>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-slate-400 font-medium">File yang diunggah akan dapat langsung diunduh oleh klien melalui halaman tracking.</p>
                 </div>
               </div>
 
@@ -1196,12 +1275,16 @@ export default function AdminPage() {
     const globalWait = orders.filter(o => o.status === 'pending').length
     const personalActive = orders.filter(o => (isSuperAdmin || o.processed_by === email) && ['confirmed', 'in_progress', 'review', 'revisi'].includes(o.status)).length
     const personalDone = orders.filter(o => (isSuperAdmin || o.processed_by === email) && o.status === 'done').length
+    const totalRevenue = orders
+      .filter(o => (isSuperAdmin || o.processed_by === email) && o.status === 'done')
+      .reduce((acc, o) => acc + (o.price || 0), 0)
+    
     const personalRatings = ratings.filter(r => {
       if (isSuperAdmin) return true
       return orders.find(o => o.order_code === r.order_code)?.processed_by === email
     })
     const avgRating = personalRatings.length ? (personalRatings.reduce((s, r) => s + r.stars, 0) / personalRatings.length).toFixed(1) : 0
-    return { total: allOrdersCount, pending: globalWait, active: personalActive, done: personalDone, avgRating }
+    return { total: allOrdersCount, pending: globalWait, active: personalActive, done: personalDone, avgRating, totalRevenue }
   }, [orders, ratings, session, isSuperAdmin, allOrdersCount])
 
   const filteredOrders = orders.filter(o => {
@@ -1377,10 +1460,10 @@ export default function AdminPage() {
                   {/* Stats Grid */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
                     {[
-                      { l: 'Total Order', v: stats.total, i: Briefcase, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+                      { l: 'Pendapatan', v: new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(stats.totalRevenue), i: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
                       { l: 'Antrian Baru', v: stats.pending, i: Clock, color: 'text-rose-600', bg: 'bg-rose-50' },
                       { l: 'Aktif Saya', v: stats.active, i: Activity, color: 'text-amber-600', bg: 'bg-amber-50' },
-                      { l: 'Rating Kerja', v: stats.avgRating, i: Star, color: 'text-emerald-600', bg: 'bg-emerald-50' }
+                      { l: 'Rating Kerja', v: stats.avgRating, i: Star, color: 'text-blue-600', bg: 'bg-blue-50' }
                     ].map((s, i) => (
                       <div key={i} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
                         <div className="flex items-center justify-between mb-4">

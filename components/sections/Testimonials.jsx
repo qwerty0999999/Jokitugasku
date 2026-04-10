@@ -123,14 +123,40 @@ export default function Testimonials() {
           .order('created_at', { ascending: false })
           .limit(9)
 
-        if (data && data.length >= 2) setReviews(data)
+        if (data && data.length >= 1) setReviews(data)
       } catch {
         // fallback ke static
       } finally {
         setLoading(false)
       }
     }
+
     fetchRatings()
+
+    // Real-time subscription untuk rating baru
+    const channel = supabase
+      .channel('public:ratings')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'ratings' },
+        (payload) => {
+          const newReview = payload.new
+          // Hanya masukkan jika bintang >= 4 dan ada komentar
+          if (newReview.stars >= 4 && newReview.comment) {
+            setReviews(prev => {
+              // Hindari duplikasi jika ada
+              const exists = prev.find(r => r.id === newReview.id)
+              if (exists) return prev
+              return [newReview, ...prev].slice(0, 9)
+            })
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [])
 
   // Auto-advance carousel mobile

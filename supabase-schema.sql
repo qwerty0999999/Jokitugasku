@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS orders (
   notes         TEXT,                        
   revision_count INT DEFAULT 0,
   processed_by  TEXT,                        -- Email admin yang menangani order ini
+  file_url      TEXT,                        -- Link file hasil pengerjaan (Supabase Storage)
   created_at    TIMESTAMPTZ DEFAULT NOW(),
   updated_at    TIMESTAMPTZ DEFAULT NOW()
 );

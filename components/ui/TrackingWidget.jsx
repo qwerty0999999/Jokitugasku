@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, CheckCircle2, Clock, Loader2, AlertCircle, RotateCcw, Star, CalendarClock } from 'lucide-react'
+import { Search, CheckCircle2, Clock, Loader2, AlertCircle, RotateCcw, Star, CalendarClock, Download } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import RatingModal from '@/components/ui/RatingModal'
 
@@ -415,6 +415,33 @@ export default function TrackingWidget({ initialCode = '' }) {
                     </div>
                   )}
                 </div>
+              )}
+
+              {/* Result Download Section */}
+              {order.file_url && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-2 p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-emerald-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-emerald-200">
+                      <CheckCircle2 size={20} />
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-emerald-900">Hasil Pengerjaan Tersedia</div>
+                      <div className="text-[10px] text-emerald-600 font-medium uppercase tracking-wider">Silakan unduh file final Anda</div>
+                    </div>
+                  </div>
+                  <a 
+                    href={order.file_url} 
+                    target="_blank" 
+                    rel="noreferrer"
+                    className="w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl transition-all shadow-md shadow-emerald-200 flex items-center justify-center gap-2 active:scale-95"
+                  >
+                    <Download size={16} /> UNDUH HASIL AKHIR
+                  </a>
+                </motion.div>
               )}
 
               {/* Live indicator */}
