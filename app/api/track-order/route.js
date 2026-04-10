@@ -14,11 +14,11 @@ export async function GET(req) {
 
     const supabaseAdmin = getSupabaseAdmin()
 
-    // Tarik data order (Sensor Data Sensitif Seperti Nomor HP dan Harga)
+    // Tarik data order (Case-Insensitive Search menggunakan ilike)
     const { data: order, error } = await supabaseAdmin
       .from('orders')
       .select('id, order_code, service, client_name, status, progress, deadline, notes, file_url, payment_receipt_url, is_paid')
-      .eq('order_code', code.trim().toUpperCase())
+      .ilike('order_code', code.trim())
       .single()
 
     if (error || !order) {
