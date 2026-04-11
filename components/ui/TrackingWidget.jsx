@@ -545,14 +545,24 @@ export default function TrackingWidget({ initialCode = '' }) {
                       <div className="text-[10px] text-emerald-600 font-medium uppercase tracking-wider">Silakan unduh file final Anda</div>
                     </div>
                   </div>
-                  <a 
-                    href={order.file_url} 
-                    target="_blank" 
-                    rel="noreferrer"
-                    className="w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl transition-all shadow-md shadow-emerald-200 flex items-center justify-center gap-2 active:scale-95"
-                  >
-                    <Download size={16} /> UNDUH HASIL AKHIR
-                  </a>
+                  <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                    {order.is_paid && (
+                      <button 
+                        onClick={() => window.open(`/invoice/${order.order_code}`, '_blank')}
+                        className="px-4 py-3 bg-white border border-emerald-200 text-emerald-700 text-xs font-bold rounded-xl hover:bg-emerald-100 transition-all flex items-center justify-center gap-2"
+                      >
+                        <Receipt size={16} /> Invoice
+                      </button>
+                    )}
+                    <a 
+                      href={order.file_url} 
+                      target="_blank" 
+                      rel="noreferrer"
+                      className="flex-1 sm:flex-none px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl transition-all shadow-md shadow-emerald-200 flex items-center justify-center gap-2 active:scale-95"
+                    >
+                      <Download size={16} /> UNDUH HASIL
+                    </a>
+                  </div>
                 </motion.div>
               )}
 

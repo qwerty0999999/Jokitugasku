@@ -770,8 +770,11 @@ function OrderCard({ order, onSave, currentAdminEmail, adminName, isSuperAdmin }
                   <button onClick={() => handleUpdateAndChat('review')} className="py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-bold uppercase transition-all flex items-center justify-center gap-2">
                     Kirim Preview
                   </button>
-                  <button onClick={() => handleUpdateAndChat('full')} className="py-3 px-4 bg-blue-600 hover:bg-blue-500 rounded-xl text-xs font-bold uppercase shadow-lg shadow-blue-900/50 transition-all active:scale-95 flex items-center justify-center gap-2">
-                    Pelunasan
+                  <button onClick={() => window.open(`/invoice/${order.order_code}`, '_blank')} className="py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-bold uppercase transition-all flex items-center justify-center gap-2">
+                    <Receipt size={14} /> Lihat Invoice
+                  </button>
+                  <button onClick={() => handleUpdateAndChat('full')} className="py-3 px-4 bg-blue-600 hover:bg-blue-500 rounded-xl text-xs font-bold uppercase shadow-lg shadow-blue-900/50 transition-all active:scale-95 flex items-center justify-center gap-2 sm:col-span-3">
+                    Pelunasan & Selesai
                   </button>
                 </div>
               </div>
