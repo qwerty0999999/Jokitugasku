@@ -169,6 +169,7 @@ function DeadlineCountdown({ deadline }) {
 export default function TrackingWidget({ initialCode = '' }) {
   const [inputCode, setInputCode] = useState(initialCode)
   const [order, setOrder] = useState(null)
+  const [logs, setLogs] = useState([])
   const [loading, setLoading] = useState(false)
   const [uploadingPayment, setUploadingPayment] = useState(false)
   const [error, setError] = useState('')
@@ -176,6 +177,18 @@ export default function TrackingWidget({ initialCode = '' }) {
   const [existingRating, setExistingRating] = useState(null)
   const [showRating, setShowRating] = useState(false)
   const inputRef = useRef(null)
+
+  const getLogIcon = (status) => {
+    switch (status) {
+      case 'pending': return <Clock size={14} className="text-amber-500" />
+      case 'confirmed': return <CheckCircle2 size={14} className="text-blue-500" />
+      case 'in_progress': return <Loader2 size={14} className="text-indigo-500 animate-spin" />
+      case 'review': return <Search size={14} className="text-purple-500" />
+      case 'done': return <CheckCircle2 size={14} className="text-emerald-500" />
+      case 'revisi': return <RotateCcw size={14} className="text-orange-500" />
+      default: return <Clock size={14} className="text-gray-400" />
+    }
+  }
 
   const isSupabaseReady = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
@@ -207,6 +220,7 @@ export default function TrackingWidget({ initialCode = '' }) {
         }
       } else {
         setOrder(result.order)
+        setLogs(result.logs || [])
         setLastUpdated(new Date())
         setExistingRating(result.rating)
         setError('')
