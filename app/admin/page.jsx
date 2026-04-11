@@ -892,8 +892,7 @@ function RatingCard({ r, onRefresh }) {
 }
 
 // ── MANAJEMEN ADMIN ──────────────────────────────────────────
-function AdminManagement({ orders, ratings }) {
-  const [admins, setAdmins] = useState([])
+function AdminManagement({ orders, ratings, admins, fetchAdmins, loading: externalLoading }) {
   const [loading, setLoading] = useState(false)
   const [showStats, setShowStats] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -925,17 +924,6 @@ function AdminManagement({ orders, ratings }) {
       }
     })
   }, [admins, orders, ratings])
-
-  const fetchAdmins = useCallback(async () => { 
-    setLoading(true)
-    const { data: { session: s } } = await supabase.auth.getSession()
-    const res = await fetch('/api/admin/manage-users', { headers: { 'Authorization': `Bearer ${s?.access_token}` } })
-    const data = await res.json()
-    if (data.users) setAdmins(data.users)
-    setLoading(false) 
-  }, [])
-
-  useEffect(() => { fetchAdmins() }, [fetchAdmins])
 
   const handleAction = async (e) => { 
     if (e) e.preventDefault()
@@ -1495,6 +1483,7 @@ export default function AdminPage() {
   const [allOrdersCount, setAllOrdersCount] = useState(0)
   const [ratings, setRatings] = useState([])
   const [revisions, setRevisions] = useState([])
+  const [admins, setAdmins] = useState([])
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('overview') 
   const [search, setSearch] = useState('')
@@ -1506,6 +1495,14 @@ export default function AdminPage() {
     const adminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').toLowerCase()
     return userEmail === adminEmail && adminEmail !== ''
   }, [session])
+
+  const fetchAdmins = useCallback(async () => {
+    if (!isSuperAdmin) return
+    const { data: { session: s } } = await supabase.auth.getSession()
+    const res = await fetch('/api/admin/manage-users', { headers: { 'Authorization': `Bearer ${s?.access_token}` } })
+    const data = await res.json()
+    if (data.users) setAdmins(data.users)
+  }, [isSuperAdmin])
 
   const fetchAllData = useCallback(async () => {
     setLoading(true)
@@ -1524,8 +1521,11 @@ export default function AdminPage() {
     setOrders(filteredO)
     setRatings(raD || [])
     setRevisions(filteredR)
+    
+    if (isSuperAdmin) await fetchAdmins()
+    
     setLoading(false)
-  }, [isSuperAdmin])
+  }, [isSuperAdmin, fetchAdmins])
 
   useEffect(() => {
     let isMounted = true
@@ -2114,7 +2114,15 @@ export default function AdminPage() {
               )}
 
               {/* TAB: TEAM */}
-              {activeTab === 'team' && isSuperAdmin && <AdminManagement orders={orders} ratings={ratings} />}
+              {activeTab === 'team' && isSuperAdmin && (
+                <AdminManagement 
+                  orders={orders} 
+                  ratings={ratings} 
+                  admins={admins} 
+                  fetchAdmins={fetchAdmins} 
+                  loading={loading}
+                />
+              )}
 
               {/* TAB: WA SETTINGS */}
               {activeTab === 'wa-settings' && isSuperAdmin && (
