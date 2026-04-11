@@ -250,7 +250,6 @@ export default function TrackingWidget({ initialCode = '' }) {
           filter: `order_code=eq.${order.order_code}`,
         },
         (payload) => {
-          console.log('Real-time update received:', payload.new)
           setOrder(payload.new)
           setLastUpdated(new Date())
           toast.info('Status pesanan diperbarui!', { icon: '🔄' })
