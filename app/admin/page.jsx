@@ -1563,7 +1563,6 @@ export default function AdminPage() {
     const ordersChannel = supabase
       .channel('admin-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
-        console.log('Realtime change in orders table')
         fetchAllData()
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'ratings' }, () => {

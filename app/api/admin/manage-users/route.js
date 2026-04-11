@@ -24,9 +24,6 @@ async function checkIsSuperAdmin(req) {
     const isSuperAdminEmail = user.email.toLowerCase() === adminEmail?.toLowerCase()
     const hasAdminRole = user.app_metadata?.role === 'admin'
 
-    // Log auth attempt tanpa mengekspos email (gunakan user ID saja)
-    console.log(`Auth attempt uid:${user.id} | isSuper: ${isSuperAdminEmail} | hasRole: ${hasAdminRole}`)
-
     return isSuperAdminEmail || hasAdminRole
   } catch (err) {
     console.error('Auth check critical error:', err.message)
