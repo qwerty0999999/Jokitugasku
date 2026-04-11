@@ -1,42 +1,52 @@
-import { NextResponse } from 'next/server'
+import { sendPaymentReceiptEmail } from '@/lib/email'
 import { getSupabaseAdmin } from '@/lib/supabase'
 
-export const dynamic = 'force-dynamic'
-
-export async function POST(req) {
+export async function POST(request) {
   try {
-    const { order_code, payment_receipt_url } = await req.json()
+    const { order_code } = await request.json()
 
-    if (!order_code || !payment_receipt_url) {
-      return NextResponse.json({ error: 'Data tidak lengkap.' }, { status: 400 })
+    if (!order_code) {
+      return Response.json({ error: 'Order code is required.' }, { status: 400 })
     }
 
-    const supabaseAdmin = getSupabaseAdmin()
-
-    // Verifikasi order ada
-    const { data: order, error: checkError } = await supabaseAdmin
+    const supabase = getSupabaseAdmin()
+    const { data: order, error } = await supabase
       .from('orders')
-      .select('id')
-      .eq('order_code', order_code.trim().toUpperCase())
+      .select('*')
+      .eq('order_code', order_code)
       .single()
 
-    if (checkError || !order) {
-      return NextResponse.json({ error: 'Kode order tidak ditemukan.' }, { status: 404 })
+    if (error || !order) {
+      return Response.json({ error: 'Order not found.' }, { status: 404 })
     }
 
-    // Update payment_receipt_url
-    const { error: updateError } = await supabaseAdmin
-      .from('orders')
-      .update({ payment_receipt_url })
-      .eq('order_code', order_code.trim().toUpperCase())
-
-    if (updateError) {
-      throw updateError
+    // Hanya kirim jika statusnya LUNAS (is_paid = true)
+    if (!order.is_paid) {
+      return Response.json({ error: 'Order is not paid yet.' }, { status: 400 })
     }
 
-    return NextResponse.json({ success: true, message: 'Bukti pembayaran berhasil diunggah.' })
-  } catch (error) {
-    console.error('Payment Receipt API Error:', error.message)
-    return NextResponse.json({ error: 'Terjadi kesalahan sistem internal.' }, { status: 500 })
+    // Jika klien tidak memberikan email (karena form saat ini hanya phone),
+    // Kita mungkin butuh field email di database di masa depan.
+    // Tapi untuk sekarang, kita coba cek jika ada email di metadata atau field khusus.
+    if (!order.client_email) {
+       return Response.json({ message: 'No client email provided, skipping email notification.' })
+    }
+
+    const result = await sendPaymentReceiptEmail({
+      email: order.client_email,
+      name: order.client_name,
+      orderCode: order.order_code,
+      service: order.service,
+      amount: order.price
+    })
+
+    if (result.error) {
+       return Response.json({ error: result.error }, { status: 500 })
+    }
+
+    return Response.json({ message: 'Email receipt sent successfully!' })
+  } catch (err) {
+    console.error('Email API Error:', err)
+    return Response.json({ error: 'Internal server error.' }, { status: 500 })
   }
 }

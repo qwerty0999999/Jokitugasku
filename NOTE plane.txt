@@ -26,17 +26,19 @@
      - Selesai: Admin bisa upload hasil pengerjaan ke Storage dan klien
        bisa mendownloadnya di halaman pelacakan.
 
-  4. AUTOMATED EMAIL RECEIPT
-     - Tugas: Mengirimkan struk pembayaran otomatis ke email klien
-       setelah admin menekan tombol "Lunas".
+  4. [x] AUTOMATED EMAIL RECEIPT
+     - Selesai: Logika pengiriman struk via Resend ditambahkan.
+     - Status: Menunggu RESEND_API_KEY di .env.local untuk aktif sepenuhnya.
+     - Input: Email sekarang dikumpulkan secara opsional di Form Order.
 
-  5. MONITORING PENGGUNAAN TOKEN AI
-     - Tugas: Memantau log penggunaan token selama 24 jam untuk
-       memastikan tidak ada kebocoran atau penggunaan liar oleh bot.
+  5. [x] MONITORING PENGGUNAAN TOKEN AI
+     - Selesai: Sistem logging token Gemini (Prompt & Completion) 
+       ditambahkan ke database dan bisa dipantau via Admin Panel.
+     - Keamanan: Admin bisa melihat IP client untuk deteksi abuse.
 
-  6. SEARCH SEO OPTIMIZATION
-     - Tugas: Mengoptimalkan Meta Tag agar website Jokitugasku muncul
-       di halaman pertama Google saat orang mencari "Joki Tugas".
+  6. [x] SEARCH SEO OPTIMIZATION
+     - Selesai: Meta Tag (OG, Twitter) & JSON-LD ditambahkan.
+     - Status: Teroptimasi untuk Google Search.
 
 ─────────────────────────────────────────────
   📋 CATATAN PENTING & INSTRUKSI
@@ -237,3 +239,4 @@
 ============================================================
   STATUS: SYSTEM READY & PLANNED (v6.0)
 ============================================================
+===

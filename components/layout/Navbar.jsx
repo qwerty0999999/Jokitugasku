@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, X, Search } from 'lucide-react'
+import { Menu, X, Search, History } from 'lucide-react'
 import { WA_NUMBER } from '@/lib/constants'
 
 const navLinks = [
@@ -125,6 +125,18 @@ export default function Navbar() {
           {/* Right Buttons */}
           <div className="flex items-center gap-3">
             <Link
+              href="/my-orders"
+              className={`hidden md:flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-bold transition-all duration-300 ${
+                pathname === '/my-orders'
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                  : 'text-slate-700 bg-white border border-slate-200 shadow-sm hover:bg-slate-50'
+              }`}
+            >
+              <History size={16} strokeWidth={3} />
+              Riwayat
+            </Link>
+
+            <Link
               href="/tracking"
               className={`hidden md:flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-bold transition-all duration-300 ${
                 pathname === '/tracking'
@@ -178,6 +190,17 @@ export default function Navbar() {
                 </Link>
               ))}
               <div className="h-px bg-slate-100 my-2" />
+              <Link
+                href="/my-orders"
+                onClick={() => setMenuOpen(false)}
+                className={`flex items-center justify-center gap-2 p-4 rounded-2xl font-bold border transition-all ${
+                  pathname === '/my-orders'
+                    ? 'bg-blue-600 text-white shadow-lg'
+                    : 'bg-slate-50 text-slate-900 border-slate-200'
+                }`}
+              >
+                <History size={18} /> Riwayat Pesanan
+              </Link>
               <Link
                 href="/tracking"
                 onClick={() => setMenuOpen(false)}

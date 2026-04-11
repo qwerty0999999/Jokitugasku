@@ -9,7 +9,7 @@ import {
   RotateCcw, Search, ChevronDown, Save, Star, TrendingUp,
   Package, Activity, LayoutDashboard, Users, Settings,
   DollarSign, Check, X, Plus, Edit3, Shield, AlertCircle,
-  Hash, User, Briefcase, Key, Trash2, MessageCircle, FileUp, Download, Receipt
+  Hash, User, Briefcase, Key, Trash2, MessageCircle, FileUp, Download, Receipt, CalendarClock
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
@@ -493,6 +493,15 @@ function OrderCard({ order, onSave, currentAdminEmail, adminName, isSuperAdmin }
       return
     }
 
+    // KIRIM EMAIL RECEIPT JIKA LUNAS
+    if (up.is_paid && order.client_email) {
+      fetch('/api/payment-receipt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_code: order.order_code })
+      }).catch(err => console.error('Email receipt failed:', err))
+    }
+
     // BROADCAST: Kirim notifikasi ke grup WhatsApp untuk setiap perubahan penting
     fetch('/api/broadcast-order', {
       method: 'POST',
@@ -883,13 +892,35 @@ function RatingCard({ r, onRefresh }) {
 }
 
 // ── MANAJEMEN ADMIN ──────────────────────────────────────────
-function AdminManagement() {
+function AdminManagement({ orders, ratings }) {
   const [admins, setAdmins] = useState([])
   const [loading, setLoading] = useState(false)
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [modalMode, setModalMode] = useState('create')
-  const [targetId, setTargetId] = useState(null)
-  const [form, setForm] = useState({ email: '', password: '', name: '' })
+  const [showStats, setShowStats] = useState(false)
+
+  // Hitung performa per admin
+  const adminStats = useMemo(() => {
+    return admins.map(admin => {
+      const adminOrders = orders.filter(o => o.processed_by === admin.email)
+      const doneOrders = adminOrders.filter(o => o.status === 'done')
+      const totalRevenue = doneOrders.reduce((acc, o) => acc + (o.price || 0), 0)
+      
+      const adminRatings = ratings.filter(r => 
+        orders.find(o => o.order_code === r.order_code)?.processed_by === admin.email
+      )
+      const avgRating = adminRatings.length 
+        ? (adminRatings.reduce((s, r) => s + r.stars, 0) / adminRatings.length).toFixed(1) 
+        : 0
+
+      return {
+        email: admin.email,
+        name: admin.user_metadata?.full_name || 'Admin',
+        total: adminOrders.length,
+        done: doneOrders.length,
+        revenue: totalRevenue,
+        rating: avgRating
+      }
+    })
+  }, [admins, orders, ratings])
 
   const fetchAdmins = useCallback(async () => { 
     setLoading(true)
@@ -949,12 +980,63 @@ function AdminManagement() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-black text-slate-900">Manajemen Tim</h2>
-          <p className="text-sm text-slate-500">Atur akses dan profil admin platform</p>
+          <p className="text-sm text-slate-500">Atur akses dan pantau performa tim admin</p>
         </div>
-        <button onClick={() => openModal('create')} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-md shadow-blue-200 flex items-center justify-center gap-2 active:scale-95 transition-all">
-          <Plus size={18} /> Tambah Admin
-        </button>
+        <div className="flex gap-2">
+          <button 
+            onClick={() => setShowStats(!showStats)} 
+            className={`px-4 py-3 rounded-xl text-sm font-bold border transition-all flex items-center gap-2 ${showStats ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+          >
+            <TrendingUp size={18} /> {showStats ? 'Tutup Statistik' : 'Lihat Performa'}
+          </button>
+          <button onClick={() => openModal('create')} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-md shadow-blue-200 flex items-center justify-center gap-2 active:scale-95 transition-all text-center">
+            <Plus size={18} /> Tambah Admin
+          </button>
+        </div>
       </div>
+
+      <AnimatePresence>
+        {showStats && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              {adminStats.map(stat => (
+                <div key={stat.email} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <Users size={80} />
+                  </div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center font-black">
+                      {stat.name.charAt(0)}
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-slate-900">{stat.name}</div>
+                      <div className="text-[10px] text-slate-400 font-medium truncate max-w-[150px]">{stat.email}</div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Selesai</div>
+                      <div className="text-xl font-black text-slate-800">{stat.done} <span className="text-[10px] text-slate-400 font-normal">/ {stat.total}</span></div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Rating</div>
+                      <div className="text-xl font-black text-amber-500 flex items-center gap-1">
+                        {stat.rating} <Star size={14} className="fill-amber-400" />
+                      </div>
+                    </div>
+                    <div className="col-span-2 pt-2 border-t border-slate-50">
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Omzet Dihasilkan</div>
+                      <div className="text-base font-black text-emerald-600">
+                        {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(stat.revenue)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
         <div className="p-5 border-b border-slate-200 bg-slate-50 flex items-center gap-2 font-bold text-slate-800">
@@ -1315,6 +1397,91 @@ function DeadlineCalendar({ orders, onSelectOrder }) {
   )
 }
 
+// ── MONITORING AI ──────────────────────────────────────────
+function AILogsUI() {
+  const [logs, setLogs] = useState([])
+  const [loading, setLoading] = useState(false)
+
+  const fetchLogs = useCallback(async () => {
+    setLoading(true)
+    const { data, error } = await supabase
+      .from('ai_usage_logs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(50)
+    if (data) setLogs(data)
+    setLoading(false)
+  }, [])
+
+  useEffect(() => { fetchLogs() }, [fetchLogs])
+
+  const totalTokens = logs.reduce((acc, l) => acc + (l.total_tokens || 0), 0)
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-black text-slate-900">AI Monitor</h2>
+          <p className="text-sm text-slate-500">Pantau penggunaan token Gemini API</p>
+        </div>
+        <div className="bg-blue-600 text-white px-6 py-3 rounded-2xl shadow-lg shadow-blue-200 flex items-center gap-3">
+          <Activity size={20} />
+          <div className="text-right">
+            <div className="text-[10px] font-bold uppercase opacity-80 leading-none">Total (50 Sesi Terakhir)</div>
+            <div className="text-lg font-black leading-none mt-1">{totalTokens.toLocaleString()} Tokens</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white border border-slate-200 rounded-[2rem] shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-100">
+                <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Waktu</th>
+                <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Model</th>
+                <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Prompt</th>
+                <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Output</th>
+                <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Total</th>
+                <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">IP Client</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="p-20 text-center">
+                    <Loader2 className="animate-spin mx-auto text-blue-500 mb-2" />
+                    <p className="text-xs font-bold text-slate-400 uppercase">Mengambil data log...</p>
+                  </td>
+                </tr>
+              ) : logs.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="p-20 text-center text-slate-400 font-medium">Belum ada aktivitas AI tercatat.</td>
+                </tr>
+              ) : (
+                logs.map(log => (
+                  <tr key={log.id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="p-5 text-xs font-bold text-slate-600">{formatDate(log.created_at)}</td>
+                    <td className="p-5">
+                      <span className="px-2 py-1 bg-indigo-50 text-indigo-600 rounded text-[10px] font-black uppercase tracking-tight border border-indigo-100">{log.model_name}</span>
+                    </td>
+                    <td className="p-5 text-xs font-bold text-slate-500 text-center">{log.prompt_tokens}</td>
+                    <td className="p-5 text-xs font-bold text-slate-500 text-center">{log.completion_tokens}</td>
+                    <td className="p-5 text-center">
+                      <span className="text-sm font-black text-slate-900">{log.total_tokens}</span>
+                    </td>
+                    <td className="p-5 text-[10px] font-mono text-slate-400">{log.user_ip}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── MAIN DASHBOARD COMPONENT ─────────────────────────────────
 export default function AdminPage() {
   const [session, setSession] = useState(null)
@@ -1456,14 +1623,59 @@ export default function AdminPage() {
       return orders.find(o => o.order_code === r.order_code)?.processed_by === email
     })
     const avgRating = personalRatings.length ? (personalRatings.reduce((s, r) => s + r.stars, 0) / personalRatings.length).toFixed(1) : 0
-    return { total: allOrdersCount, pending: globalWait, active: personalActive, done: personalDone, avgRating, totalRevenue }
+    
+    // Revenue Analytics - Last 6 Months
+    const last6Months = Array.from({ length: 6 }, (_, i) => {
+      const d = new Date()
+      d.setMonth(d.getMonth() - i)
+      return {
+        month: d.toLocaleString('id-ID', { month: 'short' }),
+        year: d.getFullYear(),
+        revenue: 0,
+        rawMonth: d.getMonth()
+      }
+    }).reverse()
+
+    orders.filter(o => o.status === 'done' && (isSuperAdmin || o.processed_by === email)).forEach(o => {
+      const d = new Date(o.created_at)
+      const m = d.getMonth()
+      const y = d.getFullYear()
+      const found = last6Months.find(l => l.rawMonth === m && l.year === y)
+      if (found) found.revenue += Number(o.price || 0)
+    })
+
+    return { total: allOrdersCount, pending: globalWait, active: personalActive, done: personalDone, avgRating, totalRevenue, monthlyRevenue: last6Months }
   }, [orders, ratings, session, isSuperAdmin, allOrdersCount])
 
-  const filteredOrders = orders.filter(o => {
-    const matchesSearch = !search || o.order_code.toUpperCase().includes(search.toUpperCase()) || o.client_name.toLowerCase().includes(search.toLowerCase())
-    const matchesStatus = filterStatus === 'all' || o.status === filterStatus
-    return matchesSearch && matchesStatus
-  })
+  const [selectedOrders, setSelectedOrders] = useState([])
+
+  const toggleSelectOrder = (code) => {
+    setSelectedOrders(prev => 
+      prev.includes(code) ? prev.filter(c => c !== code) : [...prev, code]
+    )
+  }
+
+  const handleBulkAssign = async (adminEmail) => {
+    if (selectedOrders.length === 0) return
+    setLoading(true)
+    
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ processed_by: adminEmail, status: 'confirmed', progress: 20 })
+        .in('order_code', selectedOrders)
+
+      if (error) throw error
+      
+      toast.success(`${selectedOrders.length} Pesanan berhasil ditugaskan ke ${adminEmail}`)
+      setSelectedOrders([])
+      fetchAllData()
+    } catch (err) {
+      toast.error('Gagal menugaskan pesanan massal.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const navItems = useMemo(() => {
     const items = [
@@ -1476,10 +1688,21 @@ export default function AdminPage() {
     if (isSuperAdmin) {
       items.push({ id: 'team', label: 'Tim', icon: Users })
       items.push({ id: 'wa-settings', label: 'Pengaturan WA', icon: MessageCircle })
+      items.push({ id: 'ai-logs', label: 'AI Monitor', icon: Activity })
     }
     items.push({ id: 'settings', label: 'Profil', icon: Settings })
     return items
   }, [isSuperAdmin, stats.pending, revisions])
+
+  const filteredOrders = useMemo(() => {
+    return orders.filter(o => {
+      const matchSearch = o.order_code.toLowerCase().includes(search.toLowerCase()) || 
+                          o.client_name.toLowerCase().includes(search.toLowerCase()) ||
+                          o.service.toLowerCase().includes(search.toLowerCase())
+      const matchStatus = filterStatus === 'all' || o.status === filterStatus
+      return matchSearch && matchStatus
+    })
+  }, [orders, search, filterStatus])
 
   // --- HANDLER UNTUK KLIK TIKET DI KALENDER ---
   const handleSelectFromCalendar = (code) => {
@@ -1680,8 +1903,11 @@ export default function AdminPage() {
 
                   {/* Recent Activity */}
                   <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                    <div className="p-5 sm:p-6 border-b border-slate-100 flex items-center gap-2 font-bold text-slate-800">
-                      <TrendingUp size={20} className="text-slate-400" /> Aktivitas Terbaru
+                    <div className="p-5 sm:p-6 border-b border-slate-100 flex items-center justify-between font-bold text-slate-800">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp size={20} className="text-slate-400" /> Aktivitas Terbaru
+                      </div>
+                      <button onClick={() => setActiveTab('orders')} className="text-xs text-blue-600 hover:underline">Lihat Semua</button>
                     </div>
                     <div className="divide-y divide-slate-100">
                       {orders.slice(0, 5).map(o => (
@@ -1698,9 +1924,65 @@ export default function AdminPage() {
                       ))}
                     </div>
                   </div>
-                </motion.div>
-              )}
 
+                  {/* Revenue Chart Section */}
+                  <div className="bg-white border border-slate-200 rounded-[2.5rem] p-6 sm:p-10 shadow-sm">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
+                    <div>
+                      <h3 className="text-2xl font-black text-slate-900 tracking-tight">Analisis Pendapatan</h3>
+                      <p className="text-sm text-slate-500 font-medium uppercase tracking-widest mt-1">Laporan 6 Bulan Terakhir</p>
+                    </div>
+                    <div className="flex items-center gap-2 bg-emerald-50 text-emerald-600 px-4 py-2 rounded-xl border border-emerald-100">
+                      <TrendingUp size={18} />
+                      <span className="text-sm font-black tracking-tight">Total: {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(stats.totalRevenue)}</span>
+                    </div>
+                  </div>
+
+                  <div className="relative h-64 sm:h-80 w-full mt-10">
+                    {/* Grid Lines */}
+                    <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-50">
+                      {[1, 2, 3, 4].map(i => (
+                        <div key={i} className="w-full border-t border-dashed border-slate-100 h-0" />
+                      ))}
+                      <div className="w-full border-t border-slate-200 h-0" />
+                    </div>
+
+                    {/* Bars */}
+                    <div className="absolute inset-0 flex items-end justify-between px-2 sm:px-6">
+                      {stats.monthlyRevenue.map((m, i) => {
+                        const maxRevenue = Math.max(...stats.monthlyRevenue.map(r => r.revenue), 1000000)
+                        const heightPercent = (m.revenue / maxRevenue) * 100
+
+                        return (
+                          <div key={i} className="flex flex-col items-center gap-4 flex-1 group">
+                            <div className="relative w-full flex justify-center items-end h-full">
+                              {/* Tooltip */}
+                              <div className="absolute bottom-full mb-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 z-10 pointer-events-none">
+                                <div className="bg-slate-900 text-white text-[10px] font-black px-3 py-2 rounded-lg whitespace-nowrap shadow-xl">
+                                  {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(m.revenue)}
+                                </div>
+                                <div className="w-2 h-2 bg-slate-900 rotate-45 mx-auto -mt-1" />
+                              </div>
+
+                              <motion.div 
+                                initial={{ height: 0 }}
+                                animate={{ height: `${heightPercent}%` }}
+                                transition={{ duration: 1, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
+                                className={`w-8 sm:w-16 rounded-t-2xl shadow-lg transition-all duration-300 ${m.revenue === maxRevenue ? 'bg-blue-600 shadow-blue-200' : 'bg-slate-200 group-hover:bg-blue-400 shadow-slate-100'}`}
+                              />
+                            </div>
+                            <div className="text-center">
+                              <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{m.month}</div>
+                              <div className="text-[8px] font-bold text-slate-300">{m.year}</div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                  </div>
+                  </motion.div>
+                  )}
               {/* TAB: ORDERS */}
               {activeTab === 'orders' && (
                 <motion.div key="orders" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
@@ -1726,6 +2008,42 @@ export default function AdminPage() {
                     </select>
                   </div>
 
+                  {/* Bulk Actions (Only for Super Admin) */}
+                  <AnimatePresence>
+                    {isSuperAdmin && selectedOrders.length > 0 && (
+                      <motion.div 
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="p-4 bg-blue-600 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg shadow-blue-200 mb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-white">
+                              <Package size={20} />
+                            </div>
+                            <div>
+                              <div className="text-sm font-bold text-white">{selectedOrders.length} Pesanan Terpilih</div>
+                              <button onClick={() => setSelectedOrders([])} className="text-[10px] text-blue-100 font-bold uppercase tracking-wider hover:underline">Batalkan Pilihan</button>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 w-full sm:w-auto">
+                            <select 
+                              onChange={(e) => handleBulkAssign(e.target.value)}
+                              className="flex-1 sm:flex-none p-2.5 bg-white rounded-xl text-xs font-bold text-blue-700 outline-none"
+                            >
+                              <option value="">TUGASKAN KE ADMIN...</option>
+                              {admins.map(a => (
+                                <option key={a.id} value={a.email}>{a.user_metadata?.full_name || a.email}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
                   <div className="grid grid-cols-1 gap-4">
                     {filteredOrders.length === 0 ? (
                       <div className="py-20 text-center text-slate-400 font-medium bg-white rounded-2xl border border-dashed border-slate-300">
@@ -1733,14 +2051,25 @@ export default function AdminPage() {
                       </div>
                     ) : (
                       filteredOrders.map(o => (
-                        <OrderCard 
-                          key={o.id} 
-                          order={o} 
-                          onSave={fetchAllData} 
-                          currentAdminEmail={session?.user?.email} 
-                          adminName={session?.user?.user_metadata?.full_name}
-                          isSuperAdmin={isSuperAdmin} 
-                        />
+                        <div key={o.id} className="relative group">
+                          {isSuperAdmin && (
+                            <div className="absolute left-[-12px] sm:left-[-40px] top-1/2 -translate-y-1/2 z-20">
+                              <input 
+                                type="checkbox" 
+                                checked={selectedOrders.includes(o.order_code)}
+                                onChange={() => toggleSelectOrder(o.order_code)}
+                                className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg border-2 border-slate-300 accent-blue-600 cursor-pointer shadow-sm transition-all hover:scale-110"
+                              />
+                            </div>
+                          )}
+                          <OrderCard 
+                            order={o} 
+                            onSave={fetchAllData} 
+                            currentAdminEmail={session?.user?.email} 
+                            adminName={session?.user?.user_metadata?.full_name}
+                            isSuperAdmin={isSuperAdmin} 
+                          />
+                        </div>
                       ))
                     )}
                   </div>
@@ -1781,7 +2110,7 @@ export default function AdminPage() {
               )}
 
               {/* TAB: TEAM */}
-              {activeTab === 'team' && isSuperAdmin && <AdminManagement />}
+              {activeTab === 'team' && isSuperAdmin && <AdminManagement orders={orders} ratings={ratings} />}
 
               {/* TAB: WA SETTINGS */}
               {activeTab === 'wa-settings' && isSuperAdmin && (
@@ -1791,6 +2120,13 @@ export default function AdminPage() {
                     groupId={waGroupId} setGroupId={setWaGroupId} 
                     onSave={saveWASettings} loading={isSavingWA} 
                   />
+                </motion.div>
+              )}
+
+              {/* TAB: AI MONITOR */}
+              {activeTab === 'ai-logs' && isSuperAdmin && (
+                <motion.div key="ai-logs" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <AILogsUI />
                 </motion.div>
               )}
 

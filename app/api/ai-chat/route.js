@@ -1,5 +1,6 @@
 import { GoogleGenAI } from '@google/genai'
-import { WA_NUMBER, WA_BASE_URL } from '@/lib/constants'
+import { WA_BASE_URL } from '@/lib/constants'
+import { getSupabaseAdmin } from '@/lib/supabase'
 
 const systemPrompt = `Role: CS Jokitugasku.
 Rules:
@@ -11,9 +12,9 @@ Rules:
 Gaya: Singkat, ramah, to-the-point.`
 
 const WA_LINK = `${WA_BASE_URL}?text=Halo%20Jokitugasku!`
+const MODEL_NAME = 'gemini-2.0-flash'
 
 // ─── FALLBACK RULES ───────────────────────────────────────────────────────────
-// Dipakai saat API Gemini error / tidak tersedia
 const FALLBACK_RULES = [
   {
     keys: ['harga', 'biaya', 'bayar', 'tarif', 'berapa', 'murah', 'mahal', 'budget'],
@@ -135,14 +136,10 @@ Konfirmasi ketersediaan tim via WA dulu →  ${WA_LINK}`,
   },
 ]
 
-// Fungsi fallback utama — cari rule paling relevan
 const getFallbackResponse = (userMsg = '') => {
   const msg = userMsg.toLowerCase()
-
-  // Cari rule dengan keyword paling banyak cocok
   let bestMatch = null
   let bestScore = 0
-
   for (const rule of FALLBACK_RULES) {
     const score = rule.keys.filter(k => msg.includes(k)).length
     if (score > bestScore) {
@@ -150,41 +147,24 @@ const getFallbackResponse = (userMsg = '') => {
       bestMatch = rule
     }
   }
-
-  if (bestMatch && bestScore > 0) {
-    return bestMatch.answer
-  }
-
-  // Default fallback jika tidak ada yang cocok
-  return `Halo! 👋 Saya asisten Jokitugasku.
-
-Saya membantu info seputar:
-📌 Layanan & harga
-⏱️ Estimasi waktu pengerjaan  
-💳 Cara pembayaran
-🔄 Garansi revisi
-
-Atau langsung konsultasi GRATIS dengan Admin kami → ${WA_LINK} 😊`
+  if (bestMatch && bestScore > 0) return bestMatch.answer
+  return `Halo! 👋 Saya asisten Jokitugasku. Saya membantu info seputar layanan, harga, estimasi waktu, pembayaran, dan revisi. Langsung konsultasi GRATIS dengan Admin kami → ${WA_LINK} 😊`
 }
 
 // ─── API ROUTE ────────────────────────────────────────────────────────────────
 export async function POST(req) {
   let lastMsg = { content: '' }
+  const userIp = req.headers.get('x-forwarded-for') || 'unknown'
 
   try {
-    // Validasi format JSON
     const body = await req.json().catch(() => null)
     if (!body || !body.messages || !Array.isArray(body.messages)) {
-      return new Response(getFallbackResponse(''), {
-        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-      })
+      return new Response(getFallbackResponse(''), { headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
     }
 
     const { messages } = body
     if (messages.length === 0) {
-      return new Response(getFallbackResponse(''), {
-        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-      })
+      return new Response(getFallbackResponse(''), { headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
     }
 
     const apiKey = process.env.GEMINI_API_KEY
@@ -192,55 +172,64 @@ export async function POST(req) {
     lastMsg = historyWindow.pop() || { content: '' }
 
     if (!apiKey) {
-      return new Response(getFallbackResponse(lastMsg.content), {
-        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-      })
+      return new Response(getFallbackResponse(lastMsg.content), { headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
     }
 
-    const ai = new GoogleGenAI({ apiKey })
+    const ai = new GoogleGenAI(apiKey)
+    const model = ai.getGenerativeModel({ model: MODEL_NAME, systemInstruction: systemPrompt })
 
     const history = historyWindow.map(m => ({
       role: m.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: m.content }],
     }))
 
-    const chat = ai.chats.create({
-      model: 'gemini-2.0-flash',
-      config: {
-        systemInstruction: systemPrompt,
-        maxOutputTokens: 250,
-        temperature: 0.5,
-      },
+    const chat = model.startChat({
       history,
+      generationConfig: { maxOutputTokens: 250, temperature: 0.5 },
     })
 
-    const stream = await chat.sendMessageStream({ message: lastMsg.content })
+    const stream = await chat.sendMessageStream(lastMsg.content)
+
+    // Log awal (Prompt)
+    const supabase = getSupabaseAdmin()
+    const { data: logEntry } = await supabase.from('ai_usage_logs').insert([{
+      model_name: MODEL_NAME,
+      user_ip: userIp,
+      prompt_tokens: Math.ceil((lastMsg.content.length + JSON.stringify(history).length) / 4)
+    }]).select().single()
 
     const encoder = new TextEncoder()
+    let fullResponse = ''
+
     const readable = new ReadableStream({
       async start(controller) {
-        for await (const chunk of stream) {
-          const text = chunk.text ?? ''
-          if (text) {
-            controller.enqueue(encoder.encode(text))
+        try {
+          for await (const chunk of stream.stream) {
+            const text = chunk.text()
+            if (text) {
+              fullResponse += text
+              controller.enqueue(encoder.encode(text))
+            }
           }
+          if (logEntry) {
+            await supabase.from('ai_usage_logs').update({
+              completion_tokens: Math.ceil(fullResponse.length / 4),
+              total_tokens: Math.ceil((lastMsg.content.length + JSON.stringify(history).length + fullResponse.length) / 4)
+            }).eq('id', logEntry.id)
+          }
+        } catch (streamErr) {
+          console.error('Streaming error:', streamErr)
+        } finally {
+          controller.close()
         }
-        controller.close()
       },
     })
 
     return new Response(readable, {
-      headers: {
-        'Content-Type': 'text/plain; charset=utf-8',
-        'Cache-Control': 'no-cache',
-      },
+      headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-cache' },
     })
-
   } catch (err) {
     console.error('AI chat error:', err)
-    // lastMsg sudah terdefinisi di luar try, jadi aman
-    return new Response(getFallbackResponse(lastMsg.content), {
-      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-    })
+    return new Response(getFallbackResponse(lastMsg.content), { headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
   }
 }

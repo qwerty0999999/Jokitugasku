@@ -38,11 +38,18 @@ export async function GET(req) {
         .from('ratings')
         .select('stars')
         .eq('order_code', order.order_code)
-        .single()
+        .maybeSingle()
       rating = ratingData
     }
 
-    return NextResponse.json({ order, rating })
+    // Ambil riwayat pengerjaan (milestones)
+    const { data: logs } = await supabaseAdmin
+      .from('order_logs')
+      .select('*')
+      .eq('order_code', order.order_code)
+      .order('created_at', { ascending: false })
+
+    return NextResponse.json({ order, rating, logs: logs || [] })
   } catch (error) {
     console.error('Tracking API Error:', error.message)
     return NextResponse.json({ error: 'Terjadi kesalahan sistem internal.' }, { status: 500 })

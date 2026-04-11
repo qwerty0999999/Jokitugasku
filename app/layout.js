@@ -1,9 +1,5 @@
-'use client'
-
 import './globals.css'
-import Navbar from '@/components/layout/Navbar'
-import AIAssistant from '@/components/ui/AIAssistant'
-import { usePathname } from 'next/navigation'
+import ClientLayout from '@/components/layout/ClientLayout'
 import { Plus_Jakarta_Sans, Poppins } from 'next/font/google'
 
 const plusJakarta = Plus_Jakarta_Sans({ 
@@ -19,39 +15,85 @@ const poppins = Poppins({
   display: 'swap',
 })
 
+export const metadata = {
+  title: 'Jokitugasku — Solusi Cepat & Terpercaya untuk Tugas Akademik',
+  description: 'Jasa joki tugas, konsultasi skripsi, pembuatan PPT, dan coding terpercaya. Cepat, aman, dan berkualitas. Mulai dari Rp20.000!',
+  keywords: 'joki tugas, joki skripsi, joki makalah, joki coding, jasa tugas kuliah, spss, jasa ppt, jokitugasku',
+  metadataBase: new URL('https://jokitugasku.id'), // Sesuaikan dengan domain asli
+  openGraph: {
+    type: 'website',
+    url: '/',
+    title: 'Jokitugasku — Solusi Cepat & Terpercaya',
+    description: 'Jasa joki tugas, konsultasi skripsi, pembuatan PPT, dan coding terpercaya. Cepat, aman, dan berkualitas.',
+    siteName: 'Jokitugasku',
+    images: [
+      {
+        url: '/hero.png',
+        width: 1200,
+        height: 630,
+        alt: 'Jokitugasku Preview',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Jokitugasku — Solusi Cepat & Terpercaya',
+    description: 'Jasa joki tugas, konsultasi skripsi, pembuatan PPT, dan coding terpercaya. Cepat, aman, dan berkualitas.',
+    images: ['/hero.png'],
+  },
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/logo.png',
+  },
+}
+
 export default function RootLayout({ children }) {
-  const pathname = usePathname()
-  
-  const isAdminPage = pathname && pathname.startsWith('/admin')
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "name": "Jokitugasku",
+    "description": "Jasa pengerjaan tugas akademik, skripsi, coding, dan analisis data profesional.",
+    "provider": {
+      "@type": "LocalBusiness",
+      "name": "Jokitugasku ID",
+      "image": "https://jokitugasku.id/logo.png",
+      "priceRange": "$$"
+    },
+    "areaServed": "Indonesia",
+    "hasOfferCatalog": {
+      "@type": "OfferCatalog",
+      "name": "Layanan Akademik",
+      "itemListElement": [
+        {
+          "@type": "Offer",
+          "itemOffered": {
+            "@type": "Service",
+            "name": "Joki Skripsi / Thesis"
+          }
+        },
+        {
+          "@type": "Offer",
+          "itemOffered": {
+            "@type": "Service",
+            "name": "Analisis Data SPSS"
+          }
+        }
+      ]
+    }
+  }
 
   return (
     <html lang="id" className={`scroll-smooth ${plusJakarta.variable} ${poppins.variable}`}>
       <head>
-        <title>Jokitugasku — Solusi Cepat & Terpercaya untuk Tugas Akademik</title>
-        <meta name="description" content="Jasa joki tugas, konsultasi skripsi, pembuatan PPT, dan coding terpercaya. Cepat, aman, dan berkualitas. Mulai dari Rp20.000!" />
-        <meta name="keywords" content="joki tugas, joki skripsi, joki makalah, joki coding, jasa tugas kuliah, spss, jasa ppt, jokitugasku" />
-        
-        {/* Open Graph / Facebook */}
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://jokitugasku.com/" />
-        <meta property="og:title" content="Jokitugasku — Solusi Cepat & Terpercaya" />
-        <meta property="og:description" content="Jasa joki tugas, konsultasi skripsi, pembuatan PPT, dan coding terpercaya. Cepat, aman, dan berkualitas." />
-        <meta property="og:image" content="https://jokitugasku.com/hero.png" />
-
-        {/* Twitter */}
-        <meta property="twitter:card" content="summary_large_image" />
-        <meta property="twitter:url" content="https://jokitugasku.com/" />
-        <meta property="twitter:title" content="Jokitugasku — Solusi Cepat & Terpercaya" />
-        <meta property="twitter:description" content="Jasa joki tugas, konsultasi skripsi, pembuatan PPT, dan coding terpercaya. Cepat, aman, dan berkualitas." />
-        <meta property="twitter:image" content="https://jokitugasku.com/hero.png" />
-
-        <link rel="icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" href="/logo.png" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
       </head>
       <body className="bg-white text-slate-900 antialiased font-sans">
-        {!isAdminPage && <Navbar />}
-        <main>{children}</main>
-        {!isAdminPage && <AIAssistant />}
+        <ClientLayout>
+          {children}
+        </ClientLayout>
       </body>
     </html>
   )

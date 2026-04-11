@@ -437,7 +437,7 @@ export default function TrackingWidget({ initialCode = '' }) {
 
               {/* Step timeline */}
               <div>
-                <div className="text-[10px] text-gray-400 mb-3 font-semibold tracking-widest uppercase">Tahapan</div>
+                <div className="text-[10px] text-gray-400 mb-3 font-semibold tracking-widest uppercase">Tahapan Utama</div>
                 <StepIndicator currentStatus={order.status} />
                 <div className="flex justify-between mt-2 overflow-hidden">
                   {steps.map((step, i) => (
@@ -447,6 +447,36 @@ export default function TrackingWidget({ initialCode = '' }) {
                   ))}
                 </div>
               </div>
+
+              {/* Milestone Timeline (Detailed Logs) */}
+              {logs && logs.length > 0 && (
+                <div className="border-t border-gray-50 pt-5">
+                  <div className="text-[10px] text-gray-400 mb-4 font-semibold tracking-widest uppercase">Riwayat Pengerjaan</div>
+                  <div className="space-y-4">
+                    {logs.map((log, idx) => (
+                      <div key={log.id} className="flex gap-3 relative">
+                        {idx !== logs.length - 1 && (
+                          <div className="absolute left-[7px] top-5 bottom-[-16px] w-0.5 bg-gray-100" />
+                        )}
+                        <div className="mt-1.5 z-10 bg-white">
+                          {getLogIcon(log.status)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between items-start gap-2">
+                            <div className="text-[11px] font-bold text-gray-800 uppercase tracking-tight">
+                              {statusConfig[log.status]?.label || log.status}
+                            </div>
+                            <div className="text-[9px] text-gray-400 font-medium whitespace-nowrap">
+                              {new Date(log.created_at).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                          </div>
+                          <p className="text-[10px] text-gray-500 mt-0.5 leading-relaxed">{log.notes}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Notes */}
               {order.notes && (

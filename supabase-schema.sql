@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS orders (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   order_code    TEXT UNIQUE NOT NULL,        -- e.g. "JTK-20240401-ABC12"
   client_name   TEXT NOT NULL,
-  client_phone  TEXT,
+  client_phone  TEXT NOT NULL,
+  client_email  TEXT,
   service       TEXT NOT NULL,
   description   TEXT,
   deadline      TIMESTAMPTZ,
@@ -144,4 +145,22 @@ CREATE TABLE IF NOT EXISTS system_settings (
 ALTER TABLE system_settings ENABLE ROW LEVEL SECURITY;
 -- Secure configuration: only authenticated admins can read/write system settings
 CREATE POLICY "Admin full access settings" ON system_settings FOR ALL TO authenticated USING (true);
+
+-- ============================================================
+-- AI TOKEN MONITORING
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS ai_usage_logs (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  model_name    TEXT NOT NULL,
+  prompt_tokens INT DEFAULT 0,
+  completion_tokens INT DEFAULT 0,
+  total_tokens  INT DEFAULT 0,
+  user_ip       TEXT,
+  created_at    TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE ai_usage_logs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admin read AI logs" ON ai_usage_logs FOR SELECT TO authenticated USING (true);
+CREATE POLICY "System insert AI logs" ON ai_usage_logs FOR INSERT WITH CHECK (true);
 

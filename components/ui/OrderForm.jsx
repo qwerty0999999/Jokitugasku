@@ -20,6 +20,12 @@ const serviceOptions = [
   { value: 'Lainnya', label: '🔖 Lainnya' },
 ]
 
+const steps = [
+  { icon: ClipboardList, label: 'Isi Form' },
+  { icon: MessageSquare, label: 'Diskusi WA' },
+  { icon: CheckCircle, label: 'Selesai' }
+]
+
 const levelOptions = [
   { value: 'D3', label: 'Diploma (D3)' },
   { value: 'S1', label: 'Sarjana (S1)' },
@@ -27,6 +33,15 @@ const levelOptions = [
   { value: 'S3', label: 'Doktor (S3)' },
   { value: 'Umum', label: 'Umum / SMA' },
 ]
+
+const generateOrderCode = () => {
+  const date = new Date()
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const random = Math.random().toString(36).substring(2, 7).toUpperCase()
+  return `JTK-${year}${month}${day}-${random}`
+}
 
 export default function OrderForm() {
   const [orderResult, setOrderResult] = useState(null)
@@ -68,7 +83,7 @@ export default function OrderForm() {
   }, [watchType, watchLevel, watchDeadline])
 
   const onSubmit = async (data) => {
-    const { name, phone, type, level, desc, deadline } = data
+    const { name, phone, email, type, level, desc, deadline } = data
     const orderCode = generateOrderCode()
     const finalPrice = estimatedPrice
 
@@ -76,6 +91,7 @@ export default function OrderForm() {
       `Halo Jokitugasku! 👋\n\nSaya ingin order:\n\n` +
       `📌 *Nama:* ${name}\n` +
       `📞 *No. HP:* ${phone}\n` +
+      (email ? `📧 *Email:* ${email}\n` : '') +
       `🎓 *Pendidikan:* ${level}\n` +
       `📄 *Layanan:* ${type}\n` +
       `📝 *Deskripsi:* ${desc}\n` +
@@ -91,6 +107,7 @@ export default function OrderForm() {
         order_code: orderCode,
         client_name: name,
         client_phone: phone,
+        client_email: email || null,
         service: type,
         description: desc,
         deadline: deadline || null,
@@ -269,6 +286,28 @@ export default function OrderForm() {
                   {errors.phone && (
                     <span className="text-red-500 text-xs flex items-center gap-1">
                       <AlertCircle size={12} /> {errors.phone.message}
+                    </span>
+                  )}
+                </div>
+
+                {/* Email */}
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="f-email" className="text-sm font-semibold text-gray-700">
+                    Email <span className="text-gray-400 text-[10px] font-medium">(Optional untuk struk)</span>
+                  </label>
+                  <input
+                    id="f-email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="nama@email.com"
+                    className={inputClass(errors.email)}
+                    {...register('email', {
+                      pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Format email tidak valid' },
+                    })}
+                  />
+                  {errors.email && (
+                    <span className="text-red-500 text-xs flex items-center gap-1">
+                      <AlertCircle size={12} /> {errors.email.message}
                     </span>
                   )}
                 </div>
