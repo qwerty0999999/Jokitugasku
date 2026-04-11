@@ -7,53 +7,82 @@ import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { WA_NUMBER } from '@/lib/constants'
 
+import { calculateEstimatedPrice } from '@/lib/pricing-logic'
+import { useEffect } from 'react'
+
 const serviceOptions = [
-  { value: 'Joki Tugas (Resume/Laporan)', label: '📄 Joki Tugas (Resume/Laporan)' },
-  { value: 'Makalah / Karya Tulis', label: '📝 Makalah / Karya Tulis' },
   { value: 'Skripsi / Thesis', label: '🎓 Skripsi / Thesis' },
+  { value: 'Analisis Data SPSS', label: '📈 Analisis Data SPSS' },
+  { value: 'Makalah / Karya Tulis', label: '📝 Makalah / Karya Tulis' },
   { value: 'Pembuatan PPT', label: '📊 Pembuatan PPT' },
   { value: 'Coding / Website', label: '💻 Coding / Website' },
-  { value: 'Analisis Data SPSS', label: '📈 Analisis Data SPSS' },
+  { value: 'Joki Tugas (Resume/Laporan)', label: '📄 Joki Tugas (Resume/Laporan)' },
   { value: 'Lainnya', label: '🔖 Lainnya' },
 ]
 
-const steps = [
-  { icon: ClipboardList, label: 'Isi Form', desc: 'Isi detail tugas' },
-  { icon: MessageSquare, label: 'Kirim WA', desc: 'Konfirmasi via WhatsApp' },
-  { icon: Search, label: 'Lacak', desc: 'Pantau progress' },
+const levelOptions = [
+  { value: 'D3', label: 'Diploma (D3)' },
+  { value: 'S1', label: 'Sarjana (S1)' },
+  { value: 'S2', label: 'Magister (S2)' },
+  { value: 'S3', label: 'Doktor (S3)' },
+  { value: 'Umum', label: 'Umum / SMA' },
 ]
-
-function generateOrderCode() {
-  const date = new Date()
-  const ymd = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}`
-  const rand = Math.random().toString(36).substring(2, 7).toUpperCase()
-  return `JTK-${ymd}-${rand}`
-}
 
 export default function OrderForm() {
   const [orderResult, setOrderResult] = useState(null)
   const [copied, setCopied] = useState(false)
+  const [estimatedPrice, setEstimatedPrice] = useState(0)
 
   const {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors, isSubmitting },
-  } = useForm()
+  } = useForm({
+    defaultValues: {
+      type: 'Skripsi / Thesis',
+      level: 'S1'
+    }
+  })
+
+  // Watch fields for price calculation
+  const watchType = watch('type')
+  const watchLevel = watch('level')
+  const watchDeadline = watch('deadline')
+
+  useEffect(() => {
+    if (watchType && watchLevel && watchDeadline) {
+      const deadlineDate = new Date(watchDeadline)
+      const now = new Date()
+      const diffTime = Math.max(0, deadlineDate - now)
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      
+      // Bersihkan string dari emoji untuk pencocokan harga
+      const cleanService = watchType.replace(/[^\w\s/]/gi, '').trim()
+      const price = calculateEstimatedPrice(cleanService, watchLevel, diffDays)
+      setEstimatedPrice(price)
+    } else {
+      setEstimatedPrice(0)
+    }
+  }, [watchType, watchLevel, watchDeadline])
 
   const onSubmit = async (data) => {
-    const { name, phone, type, desc, deadline } = data
+    const { name, phone, type, level, desc, deadline } = data
     const orderCode = generateOrderCode()
+    const finalPrice = estimatedPrice
 
     const message = encodeURIComponent(
       `Halo Jokitugasku! 👋\n\nSaya ingin order:\n\n` +
       `📌 *Nama:* ${name}\n` +
       `📞 *No. HP:* ${phone}\n` +
-      `📄 *Jenis Layanan:* ${type}\n` +
+      `🎓 *Pendidikan:* ${level}\n` +
+      `📄 *Layanan:* ${type}\n` +
       `📝 *Deskripsi:* ${desc}\n` +
       (deadline ? `⏰ *Deadline:* ${deadline}\n` : '') +
+      `💰 *Estimasi:* ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(finalPrice)}\n` +
       `🔖 *Kode Order:* ${orderCode}\n` +
-      `\nMohon bantuan konfirmasinya. Terima kasih!`
+      `\nMohon konfirmasinya. Terima kasih!`
     )
     window.open(`https://wa.me/${WA_NUMBER}?text=${message}`, '_blank')
 
@@ -65,6 +94,7 @@ export default function OrderForm() {
         service: type,
         description: desc,
         deadline: deadline || null,
+        price: finalPrice,
         progress: 0,
         status: 'pending',
       }
@@ -265,17 +295,54 @@ export default function OrderForm() {
                   )}
                 </div>
 
+                {/* Level Pendidikan */}
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="f-level" className="text-sm font-semibold text-gray-700">
+                    Tingkat Pendidikan <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    id="f-level"
+                    className={`${inputClass(errors.level)} bg-white`}
+                    {...register('level', { required: 'Pilih tingkat pendidikan' })}
+                  >
+                    {levelOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+
                 {/* Deadline */}
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="f-deadline" className="text-sm font-semibold text-gray-700">
-                    Deadline <span className="text-gray-400 font-normal">(opsional)</span>
+                    Deadline <span className="text-red-500">*</span>
                   </label>
                   <input
                     id="f-deadline"
                     type="datetime-local"
-                    className={`${inputClass(false)} [color-scheme:light]`}
-                    {...register('deadline')}
+                    className={`${inputClass(errors.deadline)} [color-scheme:light]`}
+                    {...register('deadline', { required: 'Deadline wajib diisi untuk estimasi harga' })}
                   />
+                  {errors.deadline && (
+                    <span className="text-red-500 text-xs flex items-center gap-1">
+                      <AlertCircle size={12} /> {errors.deadline.message}
+                    </span>
+                  )}
+                </div>
+
+                {/* Estimasi Harga (Dinamis) */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-semibold text-gray-700">Estimasi Biaya</label>
+                  <div className="h-full bg-blue-50 border-2 border-blue-100 rounded-xl px-4 py-3 flex items-center justify-between">
+                    <span className="text-blue-700 font-bold text-lg">
+                      {estimatedPrice > 0 
+                        ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(estimatedPrice)
+                        : 'Menghitung...'
+                      }
+                    </span>
+                    <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest bg-white px-2 py-1 rounded-md border border-blue-100 shadow-sm">
+                      Smart Price
+                    </span>
+                  </div>
                 </div>
 
                 {/* Description */}
