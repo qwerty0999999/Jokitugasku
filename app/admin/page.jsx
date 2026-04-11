@@ -1229,6 +1229,92 @@ function WASettingsUI({ token, setToken, groupId, setGroupId, onSave, loading })
   )
 }
 
+// ── KOMPONEN KALENDER DEADLINE ──────────────────────────────
+function DeadlineCalendar({ orders, onSelectOrder }) {
+  const [currentDate, setCurrentDate] = useState(new Date())
+  
+  const daysInMonth = (year, month) => new Date(year, month + 1, 0).getDate()
+  const firstDayOfMonth = (year, month) => new Date(year, month, 1).getDay()
+  
+  const year = currentDate.getFullYear()
+  const month = currentDate.getMonth()
+  
+  const totalDays = daysInMonth(year, month)
+  const startDay = firstDayOfMonth(year, month)
+  
+  const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
+  
+  const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1))
+  const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1))
+
+  const getOrdersForDay = (day) => {
+    return orders.filter(o => {
+      if (!o.deadline) return false
+      const d = new Date(o.deadline)
+      return d.getDate() === day && d.getMonth() === month && d.getFullYear() === year
+    })
+  }
+
+  const calendarDays = []
+  for (let i = 0; i < startDay; i++) calendarDays.push(null)
+  for (let i = 1; i <= totalDays; i++) calendarDays.push(i)
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-[2.5rem] p-6 sm:p-10 border border-slate-200 shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between mb-10">
+          <div>
+            <h3 className="text-2xl font-black text-slate-900 tracking-tight">{monthNames[month]} {year}</h3>
+            <p className="text-sm text-slate-500 font-medium uppercase tracking-widest mt-1">Pantau Semua Tenggat Waktu</p>
+          </div>
+          <div className="flex gap-2 bg-slate-100 p-1.5 rounded-2xl">
+            <button onClick={prevMonth} className="p-2.5 hover:bg-white hover:shadow-sm rounded-xl transition-all text-slate-600"><ChevronDown size={20} className="rotate-90" /></button>
+            <button onClick={() => setCurrentDate(new Date())} className="px-4 text-[10px] font-black uppercase tracking-widest hover:bg-white hover:shadow-sm rounded-xl transition-all text-blue-600">Hari Ini</button>
+            <button onClick={nextMonth} className="p-2.5 hover:bg-white hover:shadow-sm rounded-xl transition-all text-slate-600"><ChevronDown size={20} className="-rotate-90" /></button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-7 mb-4 border-b border-slate-100 pb-4">
+          {["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"].map(d => (
+            <div key={d} className="text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{d}</div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-7 gap-1 sm:gap-3">
+          {calendarDays.map((day, i) => {
+            const dayOrders = day ? getOrdersForDay(day) : []
+            const isToday = day === new Date().getDate() && month === new Date().getMonth() && year === new Date().getFullYear()
+            
+            return (
+              <div key={i} className={`min-h-[100px] sm:min-h-[140px] p-2 sm:p-3 rounded-2xl border transition-all flex flex-col gap-2 ${day ? 'bg-white border-slate-100 hover:border-blue-300 hover:shadow-md' : 'bg-slate-50/50 border-transparent'} ${isToday ? 'ring-2 ring-blue-500 border-blue-500' : ''}`}>
+                {day && (
+                  <>
+                    <div className="flex justify-between items-center">
+                      <span className={`text-sm font-black ${isToday ? 'bg-blue-600 text-white w-7 h-7 flex items-center justify-center rounded-lg shadow-lg shadow-blue-200' : 'text-slate-400'}`}>{day}</span>
+                      {dayOrders.length > 0 && <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">{dayOrders.length} Tugas</span>}
+                    </div>
+                    <div className="flex-1 overflow-y-auto space-y-1 custom-scrollbar max-h-[80px] sm:max-h-[100px]">
+                      {dayOrders.map(o => (
+                        <button 
+                          key={o.id} 
+                          onClick={() => onSelectOrder(o.order_code)}
+                          className={`w-full text-left p-1.5 rounded-lg text-[9px] font-bold border truncate hover:scale-[1.02] transition-transform ${o.status === 'done' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-rose-50 border-rose-100 text-rose-600'}`}
+                        >
+                          {o.order_code}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── MAIN DASHBOARD COMPONENT ─────────────────────────────────
 export default function AdminPage() {
   const [session, setSession] = useState(null)
@@ -1383,6 +1469,7 @@ export default function AdminPage() {
     const items = [
       { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
       { id: 'orders', label: 'Pekerjaan', icon: Package, badge: stats.pending },
+      { id: 'calendar', label: 'Kalender', icon: CalendarClock },
       { id: 'revisions', label: 'Revisi', icon: RotateCcw, badge: revisions.filter(r=>r.status==='pending').length },
       { id: 'ratings', label: 'Ulasan', icon: Star },
     ]
@@ -1393,6 +1480,14 @@ export default function AdminPage() {
     items.push({ id: 'settings', label: 'Profil', icon: Settings })
     return items
   }, [isSuperAdmin, stats.pending, revisions])
+
+  // --- HANDLER UNTUK KLIK TIKET DI KALENDER ---
+  const handleSelectFromCalendar = (code) => {
+    setSearch(code)
+    setActiveTab('orders')
+    // Scroll ke atas agar user melihat hasil pencariannya
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   // --- WA SETTINGS STATE ---
   const [waToken, setWaToken] = useState('')
@@ -1675,6 +1770,13 @@ export default function AdminPage() {
                   ) : (
                     ratings.map(r => <RatingCard key={r.id} r={r} onRefresh={fetchAllData} />)
                   )}
+                </motion.div>
+              )}
+
+              {/* TAB: CALENDAR */}
+              {activeTab === 'calendar' && (
+                <motion.div key="calendar" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <DeadlineCalendar orders={orders} onSelectOrder={handleSelectFromCalendar} />
                 </motion.div>
               )}
 
