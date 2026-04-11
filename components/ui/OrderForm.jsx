@@ -9,6 +9,7 @@ import { WA_NUMBER } from '@/lib/constants'
 
 import { calculateEstimatedPrice } from '@/lib/pricing-logic'
 import { useEffect } from 'react'
+import { toast } from 'sonner'
 
 const serviceOptions = [
   { value: 'Skripsi / Thesis', label: '🎓 Skripsi / Thesis' },
@@ -130,6 +131,8 @@ export default function OrderForm() {
 
     } catch (err) {
       console.warn('Order submission error:', err.message)
+      toast.error('Gagal mengirim pesanan. Silakan coba lagi.')
+      return
     }
 
     setOrderResult({ code: orderCode, name })
