@@ -175,47 +175,52 @@ export async function POST(req) {
       return new Response(getFallbackResponse(lastMsg.content), { headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
     }
 
-    const ai = new GoogleGenAI(apiKey)
-    const model = ai.getGenerativeModel({ model: MODEL_NAME, systemInstruction: systemPrompt })
-
-    const history = historyWindow.map(m => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }],
-    }))
-
-    const chat = model.startChat({
-      history,
-      generationConfig: { maxOutputTokens: 250, temperature: 0.5 },
+    // Initialize the SDK correctly for @google/genai
+    const ai = new GoogleGenAI({ apiKey })
+    
+    // Create chat session
+    const chat = ai.chats.create({
+      model: MODEL_NAME,
+      config: {
+        systemInstruction: systemPrompt,
+        maxOutputTokens: 250,
+        temperature: 0.5,
+      },
+      history: historyWindow.map(m => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }],
+      }))
     })
 
-    const stream = await chat.sendMessageStream(lastMsg.content)
+    // Start streaming message
+    const stream = await chat.sendMessageStream({ message: lastMsg.content })
 
-    // Log awal (Prompt)
+    // Initialize Log in Database
     const supabase = getSupabaseAdmin()
     const { data: logEntry } = await supabase.from('ai_usage_logs').insert([{
       model_name: MODEL_NAME,
       user_ip: userIp,
-      prompt_tokens: Math.ceil((lastMsg.content.length + JSON.stringify(history).length) / 4)
+      prompt_tokens: 0 // Will update after stream completes
     }]).select().single()
 
     const encoder = new TextEncoder()
-    let fullResponse = ''
-
     const readable = new ReadableStream({
       async start(controller) {
         try {
-          for await (const chunk of stream.stream) {
-            const text = chunk.text()
+          for await (const chunk of stream) {
+            const text = chunk.text
             if (text) {
-              fullResponse += text
               controller.enqueue(encoder.encode(text))
             }
-          }
-          if (logEntry) {
-            await supabase.from('ai_usage_logs').update({
-              completion_tokens: Math.ceil(fullResponse.length / 4),
-              total_tokens: Math.ceil((lastMsg.content.length + JSON.stringify(history).length + fullResponse.length) / 4)
-            }).eq('id', logEntry.id)
+            
+            // Log Token Usage from chunk metadata
+            if (chunk.usageMetadata && logEntry) {
+              await supabase.from('ai_usage_logs').update({
+                prompt_tokens: chunk.usageMetadata.promptTokenCount || 0,
+                completion_tokens: chunk.usageMetadata.candidatesTokenCount || 0,
+                total_tokens: chunk.usageMetadata.totalTokenCount || 0
+              }).eq('id', logEntry.id)
+            }
           }
         } catch (streamErr) {
           console.error('Streaming error:', streamErr)
