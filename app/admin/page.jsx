@@ -896,6 +896,10 @@ function AdminManagement({ orders, ratings }) {
   const [admins, setAdmins] = useState([])
   const [loading, setLoading] = useState(false)
   const [showStats, setShowStats] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [modalMode, setModalMode] = useState('create')
+  const [targetId, setTargetId] = useState(null)
+  const [form, setForm] = useState({ name: '', email: '', password: '' })
 
   // Hitung performa per admin
   const adminStats = useMemo(() => {
