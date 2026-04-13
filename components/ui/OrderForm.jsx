@@ -47,7 +47,7 @@ const generateOrderCode = () => {
 export default function OrderForm() {
   const [orderResult, setOrderResult] = useState(null)
   const [copied, setCopied] = useState(false)
-  const [estimatedPrice, setEstimatedPrice] = useState(0)
+  const [estimatedPrice, setEstimatedPrice] = useState({ original: 0, discount: 0, total: 0 })
 
   const {
     register,
@@ -58,7 +58,8 @@ export default function OrderForm() {
   } = useForm({
     defaultValues: {
       type: 'Skripsi / Thesis',
-      level: 'S1'
+      level: 'S1',
+      referral: ''
     }
   })
 
@@ -66,6 +67,7 @@ export default function OrderForm() {
   const watchType = watch('type')
   const watchLevel = watch('level')
   const watchDeadline = watch('deadline')
+  const watchReferral = watch('referral')
 
   useEffect(() => {
     if (watchType && watchLevel && watchDeadline) {
@@ -74,34 +76,26 @@ export default function OrderForm() {
       const diffTime = Math.max(0, deadlineDate - now)
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
       
-      // Bersihkan string dari emoji untuk pencocokan harga
-      const cleanService = watchType.replace(/[^\w\s/]/gi, '').trim()
-      const price = calculateEstimatedPrice(cleanService, watchLevel, diffDays)
-      setEstimatedPrice(price)
+      // Pemetaan ke kunci SERVICE_BASE_PRICES di lib/pricing-logic.js
+      let mappedService = 'Lainnya'
+      if (watchType.includes('Skripsi')) mappedService = 'Skripsi/Tesis'
+      else if (watchType.includes('SPSS')) mappedService = 'Analisis Data SPSS'
+      else if (watchType.includes('Makalah')) mappedService = 'Tugas Makalah'
+      else if (watchType.includes('PPT')) mappedService = 'PowerPoint Premium'
+      else if (watchType.includes('Coding')) mappedService = 'Pemrograman/Coding'
+      
+      const priceResult = calculateEstimatedPrice(mappedService, watchLevel, diffDays, watchReferral)
+      setEstimatedPrice(priceResult)
     } else {
-      setEstimatedPrice(0)
+      setEstimatedPrice({ original: 0, discount: 0, total: 0 })
     }
-  }, [watchType, watchLevel, watchDeadline])
+  }, [watchType, watchLevel, watchDeadline, watchReferral])
 
   const onSubmit = async (data) => {
-    const { name, phone, email, type, level, desc, deadline } = data
+    const { name, phone, email, type, level, desc, deadline, referral } = data
     const orderCode = generateOrderCode()
-    const finalPrice = estimatedPrice
-
-    const message = encodeURIComponent(
-      `Halo Jokitugasku! 👋\n\nSaya ingin order:\n\n` +
-      `📌 *Nama:* ${name}\n` +
-      `📞 *No. HP:* ${phone}\n` +
-      (email ? `📧 *Email:* ${email}\n` : '') +
-      `🎓 *Pendidikan:* ${level}\n` +
-      `📄 *Layanan:* ${type}\n` +
-      `📝 *Deskripsi:* ${desc}\n` +
-      (deadline ? `⏰ *Deadline:* ${deadline}\n` : '') +
-      `💰 *Estimasi:* ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(finalPrice)}\n` +
-      `🔖 *Kode Order:* ${orderCode}\n` +
-      `\nMohon konfirmasinya. Terima kasih!`
-    )
-    window.open(`https://wa.me/${WA_NUMBER}?text=${message}`, '_blank')
+    const finalPrice = estimatedPrice.total
+    const discount = estimatedPrice.discount
 
     try {
       const orderPayload = {
@@ -113,13 +107,36 @@ export default function OrderForm() {
         description: desc,
         deadline: deadline || null,
         price: finalPrice,
+        discount_amount: discount,
+        referral_code: referral || null,
         progress: 0,
         status: 'pending',
       }
 
-      await supabase.from('orders').insert(orderPayload)
+      const { error: dbError } = await supabase.from('orders').insert(orderPayload)
+      if (dbError) throw dbError
 
-      // Broadcast ke grup WA Admin via API internal
+      // Hanya tampilkan sukses dan reset form jika insert DB berhasil
+      setOrderResult({ code: orderCode, name })
+      reset()
+
+      // Kirim ke WA (Buka tab baru)
+      const message = encodeURIComponent(
+        `Halo Jokitugasku! 👋\n\nSaya ingin order:\n\n` +
+        `📌 *Nama:* ${name}\n` +
+        `📞 *No. HP:* ${phone}\n` +
+        (email ? `📧 *Email:* ${email}\n` : '') +
+        `🎓 *Pendidikan:* ${level}\n` +
+        `📄 *Layanan:* ${type}\n` +
+        `📝 *Deskripsi:* ${desc}\n` +
+        (deadline ? `⏰ *Deadline:* ${deadline}\n` : '') +
+        `💰 *Estimasi:* ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(finalPrice)}\n` +
+        `🔖 *Kode Order:* ${orderCode}\n` +
+        `\nMohon konfirmasinya. Terima kasih!`
+      )
+      window.open(`https://wa.me/${WA_NUMBER}?text=${message}`, '_blank')
+
+      // Broadcast ke grup WA Admin via API internal (Background task)
       fetch('/api/broadcast-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -131,12 +148,8 @@ export default function OrderForm() {
 
     } catch (err) {
       console.warn('Order submission error:', err.message)
-      toast.error('Gagal mengirim pesanan. Silakan coba lagi.')
-      return
+      toast.error('Gagal mengirim pesanan ke database. Silakan coba lagi.')
     }
-
-    setOrderResult({ code: orderCode, name })
-    reset()
   }
 
   const copyCode = () => {
@@ -371,19 +384,51 @@ export default function OrderForm() {
                   )}
                 </div>
 
-                {/* Estimasi Harga (Dinamis) */}
+                {/* Referral Code */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-semibold text-gray-700">Estimasi Biaya</label>
-                  <div className="h-full bg-blue-50 border-2 border-blue-100 rounded-xl px-4 py-3 flex items-center justify-between">
-                    <span className="text-blue-700 font-bold text-lg">
-                      {estimatedPrice > 0 
-                        ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(estimatedPrice)
-                        : 'Menghitung...'
-                      }
-                    </span>
-                    <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest bg-white px-2 py-1 rounded-md border border-blue-100 shadow-sm">
-                      Smart Price
-                    </span>
+                  <label htmlFor="f-referral" className="text-sm font-semibold text-gray-700">
+                    Kode Promo / Referral <span className="text-gray-400 text-[10px] font-medium">(Optional)</span>
+                  </label>
+                  <input
+                    id="f-referral"
+                    type="text"
+                    placeholder="Contoh: DISKON10"
+                    className={inputClass(false)}
+                    {...register('referral')}
+                  />
+                </div>
+
+                {/* Estimasi Harga (Dinamis) */}
+                <div className="flex flex-col gap-1.5 sm:col-span-2">
+                  <label className="text-sm font-semibold text-gray-700">Rincian Estimasi Biaya</label>
+                  <div className="bg-blue-50 border-2 border-blue-100 rounded-2xl p-4 sm:p-6">
+                    <div className="space-y-2 mb-4">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500 font-medium">Harga Layanan</span>
+                        <span className="text-slate-700 font-bold">
+                          {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(estimatedPrice.original)}
+                        </span>
+                      </div>
+                      {estimatedPrice.discount > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-emerald-600 font-medium">Potongan Promo</span>
+                          <span className="text-emerald-600 font-bold">
+                            -{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(estimatedPrice.discount)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="pt-4 border-t border-blue-200 flex items-center justify-between">
+                      <div>
+                        <div className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">Total Estimasi</div>
+                        <div className="text-2xl sm:text-3xl font-black text-blue-700">
+                          {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(estimatedPrice.total)}
+                        </div>
+                      </div>
+                      <div className="px-3 py-1.5 bg-white rounded-xl border border-blue-200 shadow-sm">
+                         <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Smart Pricing ✨</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 

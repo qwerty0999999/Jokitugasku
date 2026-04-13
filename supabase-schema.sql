@@ -23,6 +23,8 @@ CREATE TABLE IF NOT EXISTS orders (
   file_url      TEXT,                        -- Link file hasil pengerjaan (Supabase Storage)
   payment_receipt_url TEXT,                  -- Link file bukti pembayaran
   is_paid       BOOLEAN DEFAULT FALSE,       -- Status pembayaran Lunas/Belum
+  referral_code TEXT,                        -- Kode referral yang digunakan
+  discount_amount DECIMAL(12,2) DEFAULT 0,   -- Potongan harga yang diberikan
   created_at    TIMESTAMPTZ DEFAULT NOW(),
   updated_at    TIMESTAMPTZ DEFAULT NOW()
 );
@@ -163,4 +165,61 @@ CREATE TABLE IF NOT EXISTS ai_usage_logs (
 ALTER TABLE ai_usage_logs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admin read AI logs" ON ai_usage_logs FOR SELECT TO authenticated USING (true);
 CREATE POLICY "System insert AI logs" ON ai_usage_logs FOR INSERT WITH CHECK (true);
+
+-- ============================================================
+-- INTERNAL ANNOUNCEMENT SYSTEM
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS announcements (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title       TEXT NOT NULL,
+  content     TEXT NOT NULL,
+  type        TEXT DEFAULT 'info' CHECK (type IN ('info', 'warning', 'urgent')),
+  created_by  TEXT,                        -- Email admin pembuat
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE announcements ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Semua admin bisa baca pengumuman" ON announcements FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Hanya SuperAdmin bisa kelola pengumuman" 
+  ON announcements FOR ALL 
+  TO authenticated 
+  USING (auth.jwt() ->> 'email' = (SELECT current_setting('app.settings.super_admin_email', true)));
+
+-- ============================================================
+-- CLIENT CRM & LOYALTY DATABASE
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS clients (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name          TEXT NOT NULL,
+  phone         TEXT UNIQUE NOT NULL,
+  email         TEXT,
+  label         TEXT DEFAULT 'New' CHECK (label IN ('New', 'Regular', 'VIP')),
+  total_orders  INT DEFAULT 0,
+  total_spent   DECIMAL(12,2) DEFAULT 0,
+  notes         TEXT,
+  created_at    TIMESTAMPTZ DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admin full access clients" ON clients FOR ALL TO authenticated USING (true);
+
+-- ============================================================
+-- ORDER LOGS (Riwayat Progres / Milestones)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS order_logs (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_code    TEXT NOT NULL,
+  status        TEXT NOT NULL,
+  notes         TEXT,
+  admin_email   TEXT,
+  created_at    TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE order_logs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public read order_logs" ON order_logs FOR SELECT USING (true);
+CREATE POLICY "Admin manage order_logs" ON order_logs FOR ALL TO authenticated USING (true);
 

@@ -789,6 +789,12 @@ function OrderCard({ order, onSave, currentAdminEmail, adminName, isSuperAdmin }
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                <Link 
+                  href={`/admin/orders/${order.order_code}`}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl text-sm font-bold uppercase tracking-wide transition-all border border-blue-200"
+                >
+                  <ExternalLink size={18} /> Detail Lengkap & Instruksi
+                </Link>
                 <button onClick={() => handleUpdateAndChat('manual')} disabled={loading} className="flex-1 flex items-center justify-center gap-2 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold uppercase tracking-wide transition-all shadow-md active:scale-95 disabled:opacity-50">
                   {loading ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} Simpan & Chat Kustom
                 </button>
@@ -1389,6 +1395,283 @@ function DeadlineCalendar({ orders, onSelectOrder }) {
   )
 }
 
+// ── KOMPONEN PENGUMUMAN INTERNAL ───────────────────────────
+function AnnouncementUI({ isSuperAdmin, currentAdminEmail }) {
+  const [announcements, setAnnouncements] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [showForm, setShowForm] = useState(false)
+  const [form, setForm] = useState({ title: '', content: '', type: 'info' })
+
+  const fetchAnnouncements = useCallback(async () => {
+    setLoading(true)
+    const { data, error } = await supabase
+      .from('announcements')
+      .select('*')
+      .order('created_at', { ascending: false })
+    if (data) setAnnouncements(data)
+    setLoading(false)
+  }, [])
+
+  useEffect(() => { fetchAnnouncements() }, [fetchAnnouncements])
+
+  const handleCreate = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+    const { error } = await supabase.from('announcements').insert([{
+      ...form,
+      created_by: currentAdminEmail
+    }])
+    if (error) toast.error('Gagal membuat pengumuman')
+    else {
+      toast.success('Pengumuman berhasil disiarkan!')
+      setForm({ title: '', content: '', type: 'info' })
+      setShowForm(false)
+      fetchAnnouncements()
+    }
+    setLoading(false)
+  }
+
+  const handleDelete = async (id) => {
+    const { error } = await supabase.from('announcements').delete().eq('id', id)
+    if (!error) {
+      toast.success('Pengumuman dihapus')
+      fetchAnnouncements()
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-black text-slate-900">Papan Pengumuman</h2>
+          <p className="text-sm text-slate-500 font-medium">Informasi internal untuk seluruh tim Admin</p>
+        </div>
+        {isSuperAdmin && (
+          <button 
+            onClick={() => setShowForm(!showForm)}
+            className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-200 flex items-center gap-2 active:scale-95 transition-all"
+          >
+            {showForm ? <X size={18}/> : <Plus size={18}/>} 
+            {showForm ? 'Batal' : 'Buat Pengumuman'}
+          </button>
+        )}
+      </div>
+
+      <AnimatePresence>
+        {showForm && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+            <form onSubmit={handleCreate} className="bg-white p-6 rounded-2xl border border-blue-100 shadow-sm space-y-4 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Judul Pengumuman</label>
+                  <input required value={form.title} onChange={e => setForm({...form, title: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500" placeholder="Contoh: Update Prosedur Revisi" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Tipe</label>
+                  <select value={form.type} onChange={e => setForm({...form, type: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500">
+                    <option value="info">INFO BIASA</option>
+                    <option value="warning">PERINGATAN</option>
+                    <option value="urgent">PENTING / URGENT</option>
+                  </select>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Isi Pesan</label>
+                <textarea required rows={3} value={form.content} onChange={e => setForm({...form, content: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500" placeholder="Tulis pesan lengkap di sini..." />
+              </div>
+              <button disabled={loading} className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2">
+                {loading ? <Loader2 className="animate-spin" size={18}/> : <Save size={18}/>}
+                SIARKAN SEKARANG
+              </button>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="grid grid-cols-1 gap-4">
+        {announcements.length === 0 ? (
+          <div className="py-20 text-center text-slate-400 font-medium bg-white rounded-2xl border border-dashed border-slate-300">
+            Belum ada pengumuman saat ini.
+          </div>
+        ) : (
+          announcements.map(a => (
+            <div key={a.id} className={`p-6 rounded-2xl border-l-4 shadow-sm bg-white ${a.type === 'urgent' ? 'border-l-rose-500' : a.type === 'warning' ? 'border-l-amber-500' : 'border-l-blue-500'}`}>
+              <div className="flex items-start justify-between mb-2">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${a.type === 'urgent' ? 'bg-rose-50 text-rose-600' : a.type === 'warning' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'}`}>
+                      {a.type}
+                    </span>
+                    <span className="text-[10px] font-bold text-slate-400">{formatDate(a.created_at)}</span>
+                  </div>
+                  <h3 className="text-lg font-black text-slate-900 tracking-tight">{a.title}</h3>
+                </div>
+                {isSuperAdmin && (
+                  <button onClick={() => handleDelete(a.id)} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all">
+                    <Trash2 size={16} />
+                  </button>
+                )}
+              </div>
+              <p className="text-sm text-slate-600 font-medium whitespace-pre-wrap leading-relaxed">{a.content}</p>
+              <div className="mt-4 pt-4 border-t border-slate-50 flex items-center gap-2">
+                <div className="w-6 h-6 bg-slate-100 rounded-full flex items-center justify-center text-[10px] font-black text-slate-500">
+                  {a.created_by?.charAt(0).toUpperCase()}
+                </div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Oleh {a.created_by}</span>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── KOMPONEN CLIENT CRM ─────────────────────────────────────
+function ClientCRMUI({ orders }) {
+  const [clients, setClients] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [search, setSearch] = useState('')
+
+  // Derive CRM data from orders if no dedicated table yet, or fetch from 'clients'
+  const fetchClients = useCallback(async () => {
+    setLoading(true)
+    const { data, error } = await supabase
+      .from('clients')
+      .select('*')
+      .order('total_spent', { ascending: false })
+    
+    if (data && data.length > 0) {
+      setClients(data)
+    } else {
+      // Fallback: Grouping from orders to show current state
+      const grouped = orders.reduce((acc, o) => {
+        const key = o.client_phone || o.client_email || o.client_name
+        if (!acc[key]) {
+          acc[key] = {
+            name: o.client_name,
+            phone: o.client_phone,
+            email: o.client_email,
+            total_orders: 0,
+            total_spent: 0,
+            label: 'New'
+          }
+        }
+        acc[key].total_orders += 1
+        if (o.status === 'done') acc[key].total_spent += Number(o.price || 0)
+        
+        if (acc[key].total_orders >= 5) acc[key].label = 'VIP'
+        else if (acc[key].total_orders >= 2) acc[key].label = 'Regular'
+        
+        return acc
+      }, {})
+      setClients(Object.values(grouped))
+    }
+    setLoading(false)
+  }, [orders])
+
+  useEffect(() => { fetchClients() }, [fetchClients])
+
+  const filteredClients = clients.filter(c => 
+    c.name?.toLowerCase().includes(search.toLowerCase()) || 
+    c.phone?.includes(search)
+  )
+
+  const updateLabel = async (phone, newLabel) => {
+    const { error } = await supabase.from('clients').upsert([{ phone, label: newLabel }], { onConflict: 'phone' })
+    if (!error) {
+      toast.success(`Label diperbarui ke ${newLabel}`)
+      fetchClients()
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-black text-slate-900">Database Klien</h2>
+          <p className="text-sm text-slate-500 font-medium">Manajemen riwayat dan loyalitas pelanggan</p>
+        </div>
+        <div className="relative w-full sm:w-72">
+          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input 
+            type="text" 
+            value={search} 
+            onChange={e => setSearch(e.target.value)} 
+            placeholder="Cari Nama/HP..." 
+            className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500" 
+          />
+        </div>
+      </div>
+
+      <div className="bg-white border border-slate-200 rounded-[2rem] shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-100">
+                <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Pelanggan</th>
+                <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Total Order</th>
+                <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Omzet</th>
+                <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Loyalty</th>
+                <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {loading ? (
+                <tr><td colSpan={5} className="p-10 text-center text-slate-400 font-bold uppercase">Memuat...</td></tr>
+              ) : filteredClients.length === 0 ? (
+                <tr><td colSpan={5} className="p-10 text-center text-slate-400 font-bold uppercase">Belum ada data.</td></tr>
+              ) : (
+                filteredClients.map(c => (
+                  <tr key={c.phone} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="p-5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center font-black">
+                          {c.name?.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <div className="text-sm font-black text-slate-900">{c.name}</div>
+                          <div className="text-[10px] font-bold text-emerald-600">{c.phone}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-5 text-center text-sm font-black text-slate-700">{c.total_orders}</td>
+                    <td className="p-5 text-center">
+                      <div className="text-sm font-black text-slate-900">
+                        {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(c.total_spent)}
+                      </div>
+                    </td>
+                    <td className="p-5 text-center">
+                      <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${
+                        c.label === 'VIP' ? 'bg-amber-50 text-amber-600 border-amber-200' :
+                        c.label === 'Regular' ? 'bg-blue-50 text-blue-600 border-blue-200' :
+                        'bg-slate-50 text-slate-400 border-slate-200'
+                      }`}>
+                        {c.label}
+                      </span>
+                    </td>
+                    <td className="p-5 text-right">
+                      <select 
+                        value={c.label} 
+                        onChange={e => updateLabel(c.phone, e.target.value)}
+                        className="p-2 bg-slate-100 border-none rounded-lg text-[10px] font-black uppercase outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="New">Set New</option>
+                        <option value="Regular">Set Regular</option>
+                        <option value="VIP">Set VIP</option>
+                      </select>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── MONITORING AI ──────────────────────────────────────────
 function AILogsUI() {
   const [logs, setLogs] = useState([])
@@ -1485,7 +1768,39 @@ export default function AdminPage() {
   const [revisions, setRevisions] = useState([])
   const [admins, setAdmins] = useState([])
   const [loading, setLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState('overview') 
+  const [activeTab, setActiveTab] = useState('overview')
+  const [selectedOrders, setSelectedOrders] = useState([])
+  const [isBulkMode, setIsBulkMode] = useState(false)
+
+  const toggleOrderSelection = (id) => {
+    setSelectedOrders(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    )
+  }
+
+  const handleBulkAssign = async (adminEmail) => {
+    if (selectedOrders.length === 0) {
+      toast.error('Pilih setidaknya satu pesanan')
+      return
+    }
+
+    setLoading(true)
+    const { error } = await supabase
+      .from('orders')
+      .update({ processed_by: adminEmail })
+      .in('id', selectedOrders)
+
+    if (error) {
+      toast.error('Gagal menugaskan massal')
+    } else {
+      toast.success(`${selectedOrders.length} tugas berhasil ditugaskan ke ${adminEmail}`)
+      setSelectedOrders([])
+      setIsBulkMode(false)
+      fetchAllData()
+    }
+    setLoading(false)
+  }
+ 
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -1685,6 +2000,8 @@ export default function AdminPage() {
       { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
       { id: 'orders', label: 'Pekerjaan', icon: Package, badge: stats.pending },
       { id: 'calendar', label: 'Kalender', icon: CalendarClock },
+      { id: 'announcements', label: 'Pengumuman', icon: MessageCircle },
+      { id: 'crm', label: 'Database Klien', icon: Users },
       { id: 'revisions', label: 'Revisi', icon: RotateCcw, badge: revisions.filter(r=>r.status==='pending').length },
       { id: 'ratings', label: 'Ulasan', icon: Star },
     ]
@@ -2109,6 +2426,20 @@ export default function AdminPage() {
               {activeTab === 'calendar' && (
                 <motion.div key="calendar" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                   <DeadlineCalendar orders={orders} onSelectOrder={handleSelectFromCalendar} />
+                </motion.div>
+              )}
+
+              {/* TAB: ANNOUNCEMENTS */}
+              {activeTab === 'announcements' && (
+                <motion.div key="announcements" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <AnnouncementUI isSuperAdmin={isSuperAdmin} currentAdminEmail={session?.user?.email} />
+                </motion.div>
+              )}
+
+              {/* TAB: CRM */}
+              {activeTab === 'crm' && (
+                <motion.div key="crm" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <ClientCRMUI orders={orders} />
                 </motion.div>
               )}
 
