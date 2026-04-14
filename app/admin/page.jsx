@@ -3,13 +3,14 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
+import Link from 'next/link'
 import { Toaster, toast } from 'sonner'
 import {
   LogIn, LogOut, RefreshCw, CheckCircle, Clock, Loader2,
   RotateCcw, Search, ChevronDown, Save, Star, TrendingUp,
   Package, Activity, LayoutDashboard, Users, Settings,
   DollarSign, Check, X, Plus, Edit3, Shield, AlertCircle,
-  Hash, User, Briefcase, Key, Trash2, MessageCircle, FileUp, Download, Receipt, CalendarClock
+  Hash, User, Briefcase, Key, Trash2, MessageCircle, FileUp, Download, Receipt, CalendarClock, ExternalLink
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
@@ -1769,38 +1770,6 @@ export default function AdminPage() {
   const [admins, setAdmins] = useState([])
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
-  const [selectedOrders, setSelectedOrders] = useState([])
-  const [isBulkMode, setIsBulkMode] = useState(false)
-
-  const toggleOrderSelection = (id) => {
-    setSelectedOrders(prev => 
-      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
-    )
-  }
-
-  const handleBulkAssign = async (adminEmail) => {
-    if (selectedOrders.length === 0) {
-      toast.error('Pilih setidaknya satu pesanan')
-      return
-    }
-
-    setLoading(true)
-    const { error } = await supabase
-      .from('orders')
-      .update({ processed_by: adminEmail })
-      .in('id', selectedOrders)
-
-    if (error) {
-      toast.error('Gagal menugaskan massal')
-    } else {
-      toast.success(`${selectedOrders.length} tugas berhasil ditugaskan ke ${adminEmail}`)
-      setSelectedOrders([])
-      setIsBulkMode(false)
-      fetchAllData()
-    }
-    setLoading(false)
-  }
- 
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)

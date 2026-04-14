@@ -154,6 +154,8 @@ export default function OrderDetailPage() {
       setIsSummarizing(false)
     }
   }
+
+  const handleFileUpload = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
 
