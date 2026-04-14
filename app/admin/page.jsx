@@ -1875,13 +1875,17 @@ export default function AdminPage() {
     const handleFocus = async () => {
       if (!isMounted || isLoggingIn) return
       try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession()
-        if (!currentSession) {
+        // Gunakan getUser() alih-alih getSession() untuk memvalidasi token secara aktif ke server
+        const { data: { user }, error } = await supabase.auth.getUser()
+        if (error || !user) {
+          console.warn('Sesi tidak valid atau kadaluwarsa. Mengarahkan kembali ke login...')
           await supabase.auth.signOut()
           setSession(null)
-          toast.error('Sesi berakhir.')
+          toast.error('Sesi Anda telah berakhir. Silakan login kembali.')
         }
-      } catch (err) {}
+      } catch (err) {
+        setSession(null)
+      }
     }
 
     window.addEventListener('focus', handleFocus)
