@@ -1,18 +1,24 @@
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
-import { Printer, Download, CheckCircle2, Hash, Calendar, User, Briefcase, DollarSign } from 'lucide-react'
+import { Printer, CheckCircle2, Hash, Calendar, User, Briefcase, DollarSign, Clock, AlertCircle } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
 async function getOrder(code) {
-  const supabase = getSupabaseAdmin()
-  const { data } = await supabase
-    .from('orders')
-    .select('*')
-    .eq('order_code', code)
-    .single()
-  return data
+  try {
+    const supabase = getSupabaseAdmin()
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('order_code', code)
+      .single()
+    
+    if (error || !data) return null
+    return data
+  } catch (err) {
+    return null
+  }
 }
 
 export default async function InvoicePage({ params }) {
@@ -38,6 +44,8 @@ export default async function InvoicePage({ params }) {
     }).format(amount || 0)
   }
 
+  const isPaid = order.status !== 'pending' && order.status !== 'rejected'
+
   return (
     <div className="min-h-screen bg-slate-50 py-10 px-4 sm:px-6">
       {/* Action Buttons - Hidden on Print */}
@@ -46,9 +54,9 @@ export default async function InvoicePage({ params }) {
         <div className="flex gap-3">
           <button 
             onClick={() => window.print()} 
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 border border-blue-700 rounded-xl text-sm font-bold text-white hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
           >
-            <Printer size={18} /> Cetak / PDF
+            <Printer size={18} /> Cetak / Simpan PDF
           </button>
         </div>
       </div>
@@ -56,7 +64,7 @@ export default async function InvoicePage({ params }) {
       {/* Invoice Card */}
       <div className="max-w-3xl mx-auto bg-white shadow-2xl shadow-slate-200/50 rounded-[2rem] overflow-hidden border border-slate-100 print:shadow-none print:border-none print:rounded-none">
         {/* Header Decor */}
-        <div className="h-3 bg-gradient-to-r from-blue-600 to-indigo-600" />
+        <div className={`h-3 bg-gradient-to-r ${isPaid ? 'from-emerald-500 to-teal-500' : 'from-blue-600 to-indigo-600'}`} />
         
         <div className="p-8 sm:p-12">
           {/* Company Branding */}
@@ -71,9 +79,15 @@ export default async function InvoicePage({ params }) {
               </div>
             </div>
             <div className="text-left sm:text-right">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-50 text-emerald-600 rounded-full text-xs font-black uppercase tracking-widest border border-emerald-100 mb-2">
-                <CheckCircle2 size={14} /> PAID / LUNAS
-              </div>
+              {isPaid ? (
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-50 text-emerald-600 rounded-full text-xs font-black uppercase tracking-widest border border-emerald-100 mb-2">
+                  <CheckCircle2 size={14} /> PAID / LUNAS
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-amber-50 text-amber-600 rounded-full text-xs font-black uppercase tracking-widest border border-amber-100 mb-2">
+                  <Clock size={14} /> WAITING PAYMENT
+                </div>
+              )}
               <p className="text-sm text-slate-400 font-bold uppercase tracking-tighter">Invoice No: {order.order_code}</p>
             </div>
           </div>
@@ -116,7 +130,7 @@ export default async function InvoicePage({ params }) {
               <thead>
                 <tr className="bg-slate-50">
                   <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">Deskripsi Layanan</th>
-                  <th className="px-6 py-4 text-right text-xs font-black text-slate-500 uppercase tracking-widest">Total</th>
+                  <th className="px-6 py-4 text-right text-xs font-black text-slate-500 uppercase tracking-widest">Harga</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -125,20 +139,33 @@ export default async function InvoicePage({ params }) {
                     <p className="font-bold text-slate-800 mb-1">{order.service}</p>
                     <p className="text-xs text-slate-400 font-medium leading-relaxed max-w-sm">
                       Jasa pengerjaan profesional sesuai instruksi tiket {order.order_code}.
+                      {order.referral_code && (
+                        <span className="block mt-1 text-emerald-600 font-bold italic">
+                          Promo Applied: {order.referral_code}
+                        </span>
+                      )}
                     </p>
                   </td>
                   <td className="px-6 py-8 text-right align-top">
-                    <span className="font-black text-slate-900 text-lg">{formatCurrency(order.price)}</span>
+                    <span className="font-black text-slate-900 text-lg">
+                      {formatCurrency(Number(order.price) + Number(order.discount_amount || 0))}
+                    </span>
                   </td>
                 </tr>
               </tbody>
               <tfoot>
+                {order.discount_amount > 0 && (
+                  <tr className="bg-emerald-50/30">
+                    <td className="px-6 py-4 text-right font-bold text-emerald-600">DISCOUNT</td>
+                    <td className="px-6 py-4 text-right font-black text-emerald-600">-{formatCurrency(order.discount_amount)}</td>
+                  </tr>
+                )}
                 <tr className="bg-slate-50/50">
-                  <td className="px-6 py-6 text-right font-bold text-slate-500">SUBTOTAL</td>
-                  <td className="px-6 py-6 text-right font-black text-slate-900">{formatCurrency(order.price)}</td>
+                  <td className="px-6 py-6 text-right font-bold text-slate-500 uppercase tracking-widest text-xs">Total Akhir</td>
+                  <td className="px-6 py-6 text-right font-black text-slate-900 text-xl">{formatCurrency(order.price)}</td>
                 </tr>
-                <tr className="bg-blue-600 text-white">
-                  <td className="px-6 py-6 text-right font-bold text-sm">TOTAL PEMBAYARAN</td>
+                <tr className={`${isPaid ? 'bg-emerald-600' : 'bg-blue-600'} text-white`}>
+                  <td className="px-6 py-6 text-right font-bold text-sm">TOTAL {isPaid ? 'DIBAYARKAN' : 'YANG HARUS DIBAYAR'}</td>
                   <td className="px-6 py-6 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <DollarSign size={20} />
@@ -149,6 +176,14 @@ export default async function InvoicePage({ params }) {
               </tfoot>
             </table>
           </div>
+
+          {/* Payment Status Alert for Unpaid */}
+          {!isPaid && (
+            <div className="mb-8 p-4 bg-blue-50 border border-blue-100 rounded-2xl flex items-center gap-3 text-blue-700 print:hidden">
+              <AlertCircle size={20} />
+              <p className="text-xs font-bold uppercase tracking-wide">PENTING: Segera lakukan pembayaran agar tugas dapat segera dikerjakan.</p>
+            </div>
+          )}
 
           {/* Footer Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-end">
@@ -189,6 +224,7 @@ export default async function InvoicePage({ params }) {
         @media print {
           body { background: white !important; padding: 0 !important; }
           .min-h-screen { min-height: 0 !important; padding: 0 !important; }
+          .print\\:hidden { display: none !important; }
         }
       `}} />
     </div>

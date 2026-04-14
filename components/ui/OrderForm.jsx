@@ -74,7 +74,7 @@ export default function OrderForm() {
       const deadlineDate = new Date(watchDeadline)
       const now = new Date()
       const diffTime = Math.max(0, deadlineDate - now)
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      const diffHours = Math.ceil(diffTime / (1000 * 60 * 60))
       
       // Pemetaan ke kunci SERVICE_BASE_PRICES di lib/pricing-logic.js
       let mappedService = 'Lainnya'
@@ -84,7 +84,7 @@ export default function OrderForm() {
       else if (watchType.includes('PPT')) mappedService = 'PowerPoint Premium'
       else if (watchType.includes('Coding')) mappedService = 'Pemrograman/Coding'
       
-      const priceResult = calculateEstimatedPrice(mappedService, watchLevel, diffDays, watchReferral)
+      const priceResult = calculateEstimatedPrice(mappedService, watchLevel, diffHours, watchReferral)
       setEstimatedPrice(priceResult)
     } else {
       setEstimatedPrice({ original: 0, discount: 0, total: 0 })
@@ -409,6 +409,14 @@ export default function OrderForm() {
                           {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(estimatedPrice.original)}
                         </span>
                       </div>
+                      {estimatedPrice.urgencyLabel && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-orange-600 font-medium">Layanan: {estimatedPrice.urgencyLabel}</span>
+                          <span className="text-orange-600 font-bold">
+                            Included
+                          </span>
+                        </div>
+                      )}
                       {estimatedPrice.discount > 0 && (
                         <div className="flex justify-between text-sm">
                           <span className="text-emerald-600 font-medium">Potongan Promo</span>
