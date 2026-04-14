@@ -1399,6 +1399,32 @@ function DeadlineCalendar({ orders, onSelectOrder }) {
 // ── KOMPONEN PENGUMUMAN INTERNAL ───────────────────────────
 function AnnouncementUI({ isSuperAdmin, currentAdminEmail }) {
   const [announcements, setAnnouncements] = useState([])
+  const [showUrgentModal, setShowUrgentModal] = useState(false)
+  const [urgentAnnouncement, setUrgentAnnouncement] = useState(null)
+
+  const fetchAnnouncements = useCallback(async () => {
+    const { data } = await supabase
+      .from('announcements')
+      .select('*')
+      .order('created_at', { ascending: false })
+    
+    if (data) {
+      setAnnouncements(data)
+      // Cek jika ada pengumuman urgent yang dibuat dalam 24 jam terakhir
+      const urgent = data.find(a => a.type === 'urgent')
+      if (urgent) {
+        const isNew = new Date(urgent.created_at) > new Date(Date.now() - 24 * 60 * 60 * 1000)
+        if (isNew) {
+          setUrgentAnnouncement(urgent)
+          setShowUrgentModal(true)
+        }
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    if (session) fetchAnnouncements()
+  }, [session, fetchAnnouncements])
   const [loading, setLoading] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ title: '', content: '', type: 'info' })
@@ -1758,6 +1784,62 @@ function AILogsUI() {
   )
 }
 
+// ── KOMPONEN MODAL PENGUMUMAN URGENT ─────────────────────────
+function UrgentAnnouncementModal({ announcement, onClose }) {
+  if (!announcement) return null
+  
+  return (
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+      <motion.div 
+        initial={{ opacity: 0 }} 
+        animate={{ opacity: 1 }} 
+        exit={{ opacity: 0 }} 
+        onClick={onClose}
+        className="absolute inset-0 bg-slate-950/80 backdrop-blur-md" 
+      />
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.9, y: 20 }} 
+        animate={{ opacity: 1, scale: 1, y: 0 }} 
+        exit={{ opacity: 0, scale: 0.9, y: 20 }} 
+        className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.5)] overflow-hidden border border-white/20"
+      >
+        <div className="bg-rose-600 p-8 text-white relative overflow-hidden">
+          <motion.div 
+            animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
+            transition={{ duration: 4, repeat: Infinity }}
+            className="absolute -top-10 -right-10 w-40 h-40 bg-white rounded-full blur-3xl"
+          />
+          <div className="relative z-10 flex flex-col items-center text-center">
+            <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mb-4 ring-1 ring-white/30">
+              <AlertCircle size={32} className="text-white" strokeWidth={3} />
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-80 mb-1">Pengumuman Penting</span>
+            <h2 className="text-2xl font-black tracking-tight">{announcement.title}</h2>
+          </div>
+        </div>
+        
+        <div className="p-8 sm:p-10">
+          <p className="text-slate-600 font-medium leading-relaxed text-center mb-8">
+            {announcement.content}
+          </p>
+          
+          <div className="flex flex-col gap-3">
+            <button 
+              onClick={onClose}
+              className="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-2xl transition-all shadow-xl active:scale-95 flex items-center justify-center gap-2"
+            >
+              SAYA MENGERTI
+            </button>
+            <div className="flex items-center justify-center gap-2 mt-2">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Disiarkan oleh {announcement.created_by}</span>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
 // ── MAIN DASHBOARD COMPONENT ─────────────────────────────────
 export default function AdminPage() {
   const [session, setSession] = useState(null)
@@ -1773,6 +1855,10 @@ export default function AdminPage() {
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+
+  // -- Urgent Announcement States --
+  const [showUrgentModal, setShowUrgentModal] = useState(false)
+  const [urgentAnnouncement, setUrgentAnnouncement] = useState(null)
 
   const isSuperAdmin = useMemo(() => {
     const userEmail = session?.user?.email?.toLowerCase()
@@ -2511,11 +2597,20 @@ export default function AdminPage() {
                 <button onClick={() => supabase.auth.signOut()} className="w-full py-3 bg-rose-50 text-rose-600 font-bold rounded-xl flex items-center justify-center gap-2">
                   <LogOut size={18} /> Keluar
                 </button>
-              </div>
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
-    </div>
-  )
-}
+                </div>
+                </motion.aside>
+                </>
+                )}
+                </AnimatePresence>
+
+                <AnimatePresence>
+                {showUrgentModal && (
+                <UrgentAnnouncementModal 
+                announcement={urgentAnnouncement} 
+                onClose={() => setShowUrgentModal(false)} 
+                />
+                )}
+                </AnimatePresence>
+                </div>
+                )
+                }
