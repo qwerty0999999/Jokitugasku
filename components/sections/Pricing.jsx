@@ -1,81 +1,106 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Check, Zap, Star } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
 
 const WA_NUMBER = '6289524894059'
 
-const pricingTiers = [
-  {
-    id: 'price-starter',
-    tier: 'Dasar',
-    name: 'Tugas Ringan',
-    priceLabel: 'Mulai dari',
-    price: 'Rp 20K',
-    unit: 'per tugas',
-    featured: false,
-    features: [
-      'Resume & Rangkuman',
-      'Jawab soal essay',
-      'Laporan singkat',
-      'Revisi 1x gratis',
-      'Pengerjaan < 24 jam',
-    ],
-    cta: 'Pesan Sekarang',
-    ctaHref: '#order-form',
-    ctaExternal: false,
-    cardBg: 'bg-white',
-    borderClass: 'border-slate-100 hover:border-blue-200',
-    tierBadge: 'bg-slate-100 text-slate-600',
-  },
-  {
-    id: 'price-pro',
-    tier: 'Populer',
-    name: 'Makalah & Skripsi',
-    priceLabel: 'Mulai dari',
-    price: 'Rp 50K',
-    unit: 'per bab / halaman',
-    featured: true,
-    badge: '🔥 Terpopuler',
-    features: [
-      'Makalah ilmiah lengkap',
-      'Proposal & skripsi',
-      'Analisis SPSS / data',
-      'Revisi unlimited',
-      'Konsultasi via WA',
-    ],
-    cta: 'Pesan Sekarang',
-    ctaHref: '#order-form',
-    ctaExternal: false,
-    cardBg: 'bg-slate-900',
-    borderClass: 'border-slate-800',
-    tierBadge: 'bg-white/10 text-white/70',
-  },
-  {
-    id: 'price-custom',
-    tier: 'Premium',
-    name: 'Coding & IT',
-    priceLabel: 'Harga',
-    price: 'Custom',
-    unit: 'sesuai kebutuhan',
-    featured: false,
-    features: [
-      'Website & aplikasi',
-      'Python / Java / DSA',
-      'Database & API',
-      'Revisi unlimited',
-      'Source code included',
-    ],
-    cta: 'Konsultasi Dulu',
-    ctaHref: `https://wa.me/${WA_NUMBER}?text=Halo!%20Saya%20ingin%20tanya%20harga%20project%20coding.`,
-    ctaExternal: true,
-    cardBg: 'bg-white',
-    borderClass: 'border-slate-100 hover:border-blue-200',
-    tierBadge: 'bg-slate-100 text-slate-600',
-  },
-]
+const defaultPrices = {
+  starter: { price: 'Rp 20K', unit: 'per tugas' },
+  pro: { price: 'Rp 50K', unit: 'per bab / halaman' },
+  custom: { price: 'Custom', unit: 'sesuai kebutuhan' }
+}
 
 export default function Pricing() {
+  const [prices, setPrices] = useState(defaultPrices)
+
+  useEffect(() => {
+    const fetchPrices = async () => {
+      const { data } = await supabase.from('system_settings').select('*').eq('key', 'LANDING_PRICES').single()
+      if (data && data.value) {
+        try {
+          const parsed = JSON.parse(data.value)
+          setPrices(parsed)
+        } catch (e) {
+          console.error("Error parsing landing prices:", e)
+        }
+      }
+    }
+    fetchPrices()
+  }, [])
+
+  const pricingTiers = [
+    {
+      id: 'price-starter',
+      tier: 'Dasar',
+      name: 'Tugas Ringan',
+      priceLabel: 'Mulai dari',
+      price: prices.starter.price,
+      unit: prices.starter.unit,
+      featured: false,
+      features: [
+        'Resume & Rangkuman',
+        'Jawab soal essay',
+        'Laporan singkat',
+        'Revisi 1x gratis',
+        'Pengerjaan < 24 jam',
+      ],
+      cta: 'Pesan Sekarang',
+      ctaHref: '#order-form',
+      ctaExternal: false,
+      cardBg: 'bg-white',
+      borderClass: 'border-slate-100 hover:border-blue-200',
+      tierBadge: 'bg-slate-100 text-slate-600',
+    },
+    {
+      id: 'price-pro',
+      tier: 'Populer',
+      name: 'Makalah & Skripsi',
+      priceLabel: 'Mulai dari',
+      price: prices.pro.price,
+      unit: prices.pro.unit,
+      featured: true,
+      badge: '🔥 Terpopuler',
+      features: [
+        'Makalah ilmiah lengkap',
+        'Proposal & skripsi',
+        'Analisis SPSS / data',
+        'Revisi unlimited',
+        'Konsultasi via WA',
+      ],
+      cta: 'Pesan Sekarang',
+      ctaHref: '#order-form',
+      ctaExternal: false,
+      cardBg: 'bg-slate-900',
+      borderClass: 'border-slate-800',
+      tierBadge: 'bg-white/10 text-white/70',
+    },
+    {
+      id: 'price-custom',
+      tier: 'Premium',
+      name: 'Coding & IT',
+      priceLabel: 'Harga',
+      price: prices.custom.price,
+      unit: prices.custom.unit,
+      featured: false,
+      features: [
+        'Website & aplikasi',
+        'Python / Java / DSA',
+        'Database & API',
+        'Revisi unlimited',
+        'Source code included',
+      ],
+      cta: 'Konsultasi Dulu',
+      ctaHref: `https://wa.me/${WA_NUMBER}?text=Halo!%20Saya%20ingin%20tanya%20harga%20project%20coding.`,
+      ctaExternal: true,
+      cardBg: 'bg-white',
+      borderClass: 'border-slate-100 hover:border-blue-200',
+      tierBadge: 'bg-slate-100 text-slate-600',
+    },
+  ]
+
   return (
     <section id="pricing" className="py-28 bg-white relative overflow-hidden">
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-100 to-transparent" />

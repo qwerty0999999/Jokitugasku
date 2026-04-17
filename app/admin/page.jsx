@@ -691,10 +691,28 @@ function OrderCard({ order, onSave, currentAdminEmail, adminName, isSuperAdmin }
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-semibold text-slate-600">Total Biaya (Rp)</label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">Rp</span>
-                    <input type="text" value={new Intl.NumberFormat('id-ID').format(formData.price || 0)} onChange={e => setFormData({...formData, price: Number(e.target.value.replace(/[^0-9]/g, ''))})} className="w-full pl-12 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all" placeholder="0" />
+                  <div className="relative group">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold group-focus-within:text-blue-500">Rp</span>
+                    <input 
+                      type="text" 
+                      readOnly={!isSuperAdmin && order.status !== 'pending'}
+                      value={formData.price ? new Intl.NumberFormat('id-ID').format(formData.price) : ''} 
+                      onChange={e => {
+                        const val = e.target.value.replace(/[^0-9]/g, '')
+                        setFormData({...formData, price: val ? Number(val) : 0})
+                      }} 
+                      className={`w-full pl-12 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all ${(!isSuperAdmin && order.status !== 'pending') ? 'bg-slate-50 cursor-not-allowed text-slate-500' : 'hover:border-slate-400'}`}
+                      placeholder="0" 
+                    />
+                    {!isSuperAdmin && order.status !== 'pending' && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Shield size={14} className="text-slate-300" />
+                      </div>
+                    )}
                   </div>
+                  {isSuperAdmin && (
+                    <p className="text-[10px] text-blue-500 font-bold uppercase tracking-wider pl-1">SuperAdmin Privilege: Price Editable</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-semibold text-slate-600">Catatan / Tracking</label>
@@ -1228,6 +1246,94 @@ function PersonalSettings({ session, onRefresh, isSuperAdmin, stats }) {
           </button>
         </div>
       )}
+    </div>
+  )
+}
+
+// ── PENGATURAN HARGA LANDING PAGE ───────────────────────────
+function PricingSettingsUI({ loading: externalLoading }) {
+  const [loading, setLoading] = useState(false)
+  const [prices, setPrices] = useState({
+    starter: { price: '20K', unit: 'per tugas' },
+    pro: { price: '50K', unit: 'per bab / halaman' },
+    custom: { price: 'Custom', unit: 'sesuai kebutuhan' }
+  })
+
+  const fetchPrices = useCallback(async () => {
+    setLoading(true)
+    const { data } = await supabase.from('system_settings').select('*')
+    if (data) {
+      const savedPrices = data.find(i => i.key === 'LANDING_PRICES')?.value
+      if (savedPrices) setPrices(JSON.parse(savedPrices))
+    }
+    setLoading(false)
+  }, [])
+
+  useEffect(() => { fetchPrices() }, [fetchPrices])
+
+  const handleSave = async () => {
+    setLoading(true)
+    const { error } = await supabase.from('system_settings').upsert([
+      { key: 'LANDING_PRICES', value: JSON.stringify(prices) }
+    ])
+    if (!error) toast.success('Harga landing page berhasil diperbarui!')
+    else toast.error('Gagal menyimpan harga.')
+    setLoading(false)
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-2xl p-6 md:p-8 border border-slate-200 shadow-sm">
+        <div className="flex items-center gap-4 mb-8">
+          <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+            <DollarSign size={28} />
+          </div>
+          <div>
+            <h3 className="text-xl font-black text-slate-900">Manajemen Harga Landing Page</h3>
+            <p className="text-sm text-slate-500">Sesuaikan harga yang tampil di bagian "Pricing" depan</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {Object.entries(prices).map(([key, val]) => (
+            <div key={key} className="p-6 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
+              <div className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">{key} TIER</div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase">Label Harga</label>
+                <input 
+                  value={val.price} 
+                  onChange={e => setPrices({...prices, [key]: {...val, price: e.target.value}})}
+                  className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm font-black outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                  placeholder="Contoh: Rp 50K"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase">Unit / Keterangan</label>
+                <input 
+                  value={val.unit} 
+                  onChange={e => setPrices({...prices, [key]: {...val, unit: e.target.value}})}
+                  className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                  placeholder="Contoh: per tugas"
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <button 
+          onClick={handleSave}
+          disabled={loading}
+          className="px-8 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-200 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          {loading ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} 
+          UPDATE HARGA LANDING PAGE
+        </button>
+      </div>
+
+      <div className="bg-amber-50 border border-amber-100 rounded-2xl p-6 text-sm text-amber-800">
+        <h4 className="font-bold flex items-center gap-2 mb-2">⚠️ Perhatian:</h4>
+        <p className="opacity-90">Perubahan di sini hanya akan mengubah <b>tampilan visual</b> di halaman depan untuk menarik minat pelanggan. Harga asli saat pemesanan tetap akan dihitung secara otomatis oleh sistem Smart Pricing.</p>
+      </div>
     </div>
   )
 }
@@ -2065,6 +2171,7 @@ export default function AdminPage() {
       { id: 'ratings', label: 'Ulasan', icon: Star },
     ]
     if (isSuperAdmin) {
+      items.push({ id: 'pricing-settings', label: 'Harga Landing', icon: DollarSign })
       items.push({ id: 'team', label: 'Tim', icon: Users })
       items.push({ id: 'wa-settings', label: 'Pengaturan WA', icon: MessageCircle })
       items.push({ id: 'ai-logs', label: 'AI Monitor', icon: Activity })
@@ -2511,6 +2618,13 @@ export default function AdminPage() {
                   fetchAdmins={fetchAdmins} 
                   loading={loading}
                 />
+              )}
+
+              {/* TAB: PRICING SETTINGS */}
+              {activeTab === 'pricing-settings' && isSuperAdmin && (
+                <motion.div key="pricing-settings" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <PricingSettingsUI />
+                </motion.div>
               )}
 
               {/* TAB: WA SETTINGS */}
