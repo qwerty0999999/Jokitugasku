@@ -1401,8 +1401,12 @@ function AnnouncementUI({ isSuperAdmin, currentAdminEmail }) {
   const [announcements, setAnnouncements] = useState([])
   const [showUrgentModal, setShowUrgentModal] = useState(false)
   const [urgentAnnouncement, setUrgentAnnouncement] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [showForm, setShowForm] = useState(false)
+  const [form, setForm] = useState({ title: '', content: '', type: 'info' })
 
   const fetchAnnouncements = useCallback(async () => {
+    setLoading(true)
     const { data } = await supabase
       .from('announcements')
       .select('*')
@@ -1420,26 +1424,12 @@ function AnnouncementUI({ isSuperAdmin, currentAdminEmail }) {
         }
       }
     }
-  }, [])
-
-  useEffect(() => {
-    if (session) fetchAnnouncements()
-  }, [session, fetchAnnouncements])
-  const [loading, setLoading] = useState(false)
-  const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ title: '', content: '', type: 'info' })
-
-  const fetchAnnouncements = useCallback(async () => {
-    setLoading(true)
-    const { data, error } = await supabase
-      .from('announcements')
-      .select('*')
-      .order('created_at', { ascending: false })
-    if (data) setAnnouncements(data)
     setLoading(false)
   }, [])
 
-  useEffect(() => { fetchAnnouncements() }, [fetchAnnouncements])
+  useEffect(() => {
+    fetchAnnouncements()
+  }, [fetchAnnouncements])
 
   const handleCreate = async (e) => {
     e.preventDefault()
@@ -1876,13 +1866,23 @@ export default function AdminPage() {
 
   const fetchAllData = useCallback(async () => {
     setLoading(true)
-    const [ { data: oD }, { data: raD }, { data: reD } ] = await Promise.all([
+    const [ { data: oD }, { data: raD }, { data: reD }, { data: anD } ] = await Promise.all([
       supabase.from('orders').select('*').order('created_at', { ascending: false }),
       supabase.from('ratings').select('*').order('created_at', { ascending: false }),
       supabase.from('revisions').select('*, orders(client_name, service, processed_by)').order('created_at', { ascending: false }),
+      supabase.from('announcements').select('*').order('created_at', { ascending: false }),
     ])
     
     if (oD) setAllOrdersCount(oD.length)
+    
+    // Check for urgent announcement
+    if (anD) {
+      const urgent = anD.find(a => a.type === 'urgent')
+      if (urgent) {
+        setUrgentAnnouncement(urgent)
+        setShowUrgentModal(true)
+      }
+    }
     
     const email = (await supabase.auth.getSession()).data.session?.user?.email
     const filteredO = (oD || []).filter(o => isSuperAdmin || o.status === 'pending' || o.processed_by === email)

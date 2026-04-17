@@ -428,76 +428,89 @@ export default function TrackingWidget({ initialCode = '' }) {
               {order.deadline && <DeadlineCountdown deadline={order.deadline} />}
 
               {/* Progress bar */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs sm:text-sm font-semibold text-gray-700">Progress Pengerjaan</span>
+              <div className="bg-gray-50/50 p-4 rounded-2xl border border-gray-100/50 shadow-inner">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Progress Pengerjaan</span>
                   <motion.span
                     key={order.progress}
                     initial={{ scale: 1.3, color: '#3B82F6' }}
                     animate={{ scale: 1, color: '#2563EB' }}
-                    className="text-xl sm:text-2xl font-bold font-display text-blue-600 tabular-nums"
+                    className="text-2xl font-black font-display text-blue-600 tabular-nums"
                   >
                     {order.progress}%
                   </motion.span>
                 </div>
                 <ProgressBar progress={order.progress} />
-                <div className="flex justify-between mt-1.5 text-[10px] text-gray-400">
-                  <span>0%</span>
-                  <span>50%</span>
-                  <span>100%</span>
-                </div>
               </div>
 
-              {/* Step timeline */}
-              <div>
-                <div className="text-[10px] text-gray-400 mb-3 font-semibold tracking-widest uppercase">Tahapan Utama</div>
-                <StepIndicator currentStatus={order.status} />
-                <div className="flex justify-between mt-2 overflow-hidden">
-                  {steps.map((step, i) => (
-                    <div key={step.key} className="flex-1 text-center first:text-left last:text-right">
-                      <span className="text-[9px] sm:text-[10px] text-gray-400 whitespace-nowrap">{step.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Milestone Timeline (Detailed Logs) */}
+              {/* Milestone Timeline (Detailed Logs) - MOVED UP and styled better */}
               {logs && logs.length > 0 && (
-                <div className="border-t border-gray-50 pt-5">
-                  <div className="text-[10px] text-gray-400 mb-4 font-semibold tracking-widest uppercase">Riwayat Pengerjaan</div>
-                  <div className="space-y-4">
+                <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+                  <div className="flex items-center gap-2 mb-6">
+                    <div className="w-1.5 h-6 bg-blue-500 rounded-full" />
+                    <div className="text-xs font-black text-gray-800 tracking-widest uppercase">Riwayat & Milestone</div>
+                  </div>
+                  <div className="space-y-6 relative">
+                    {/* Continuous vertical line */}
+                    <div className="absolute left-[11px] top-2 bottom-2 w-0.5 bg-gradient-to-b from-blue-100 via-gray-100 to-transparent" />
+                    
                     {logs.map((log, idx) => (
-                      <div key={log.id} className="flex gap-3 relative">
-                        {idx !== logs.length - 1 && (
-                          <div className="absolute left-[7px] top-5 bottom-[-16px] w-0.5 bg-gray-100" />
-                        )}
-                        <div className="mt-1.5 z-10 bg-white">
+                      <motion.div 
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: idx * 0.1 }}
+                        key={log.id} 
+                        className="flex gap-4 relative z-10"
+                      >
+                        <div className="mt-1 w-6 h-6 rounded-full bg-white border-2 border-gray-100 flex items-center justify-center shadow-sm">
                           {getLogIcon(log.status)}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex justify-between items-start gap-2">
-                            <div className="text-[11px] font-bold text-gray-800 uppercase tracking-tight">
+                        <div className="flex-1 min-w-0 bg-gray-50/30 hover:bg-gray-50 p-3 rounded-xl transition-colors border border-transparent hover:border-gray-100">
+                          <div className="flex justify-between items-center mb-1">
+                            <div className="text-[11px] font-black text-gray-900 uppercase tracking-tight">
                               {statusConfig[log.status]?.label || log.status}
                             </div>
-                            <div className="text-[9px] text-gray-400 font-medium whitespace-nowrap">
+                            <div className="text-[9px] text-gray-400 font-bold bg-white px-2 py-0.5 rounded-full border border-gray-100 shadow-sm">
                               {new Date(log.created_at).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                             </div>
                           </div>
-                          <p className="text-[10px] text-gray-500 mt-0.5 leading-relaxed">{log.notes}</p>
+                          {log.notes && (
+                            <p className="text-[11px] text-gray-600 leading-relaxed font-medium">
+                              {log.notes}
+                            </p>
+                          )}
                         </div>
-                      </div>
+                      </motion.div>
                     ))}
                   </div>
                 </div>
               )}
 
+              {/* Step timeline */}
+              <div className="px-2">
+                <div className="text-[10px] text-gray-400 mb-4 font-bold tracking-widest uppercase text-center">Tahapan Utama Pesanan</div>
+                <StepIndicator currentStatus={order.status} />
+                <div className="flex justify-between mt-3">
+                  {steps.map((step, i) => (
+                    <div key={step.key} className="flex-1 text-center">
+                      <span className={`text-[9px] font-bold uppercase tracking-tighter ${i <= (statusConfig[order.status]?.step ?? 0) ? 'text-blue-600' : 'text-gray-300'}`}>
+                        {step.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* Notes */}
               {order.notes && (
-                <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 sm:p-4">
-                  <div className="text-[10px] sm:text-xs font-semibold text-blue-600 mb-1 flex items-center gap-1.5">
-                    💬 Catatan Tim
+                <div className="bg-amber-50/50 border border-amber-100 rounded-2xl p-4 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-2 opacity-10">
+                    <AlertCircle size={40} className="text-amber-500" />
                   </div>
-                  <p className="text-gray-700 text-xs sm:text-sm leading-relaxed">{order.notes}</p>
+                  <div className="text-[10px] font-black text-amber-600 mb-2 flex items-center gap-1.5 uppercase tracking-widest">
+                    📌 Catatan Khusus Admin
+                  </div>
+                  <p className="text-gray-700 text-xs sm:text-sm leading-relaxed font-medium relative z-10">{order.notes}</p>
                 </div>
               )}
 

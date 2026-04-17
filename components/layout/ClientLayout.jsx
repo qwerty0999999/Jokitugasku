@@ -4,7 +4,6 @@ import { usePathname } from 'next/navigation'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import AIAssistant from '@/components/ui/AIAssistant'
-import WaFloat from '@/components/ui/WaFloat'
 
 /**
  * ClientLayout — wrapper client component untuk elemen yang butuh hooks (usePathname).
@@ -23,7 +22,6 @@ export default function ClientLayout({ children }) {
         <>
           <Footer />
           <AIAssistant />
-          <WaFloat />
         </>
       )}
     </>
