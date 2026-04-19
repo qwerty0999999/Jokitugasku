@@ -1290,7 +1290,7 @@ function PricingSettingsUI({ loading: externalLoading }) {
           </div>
           <div>
             <h3 className="text-xl font-black text-slate-900">Manajemen Harga Landing Page</h3>
-            <p className="text-sm text-slate-500">Sesuaikan harga yang tampil di bagian "Pricing" depan</p>
+            <p className="text-sm text-slate-500">Sesuaikan harga yang tampil di bagian &quot;Pricing&quot; depan</p>
           </div>
         </div>
 
