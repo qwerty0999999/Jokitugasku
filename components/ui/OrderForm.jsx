@@ -2,13 +2,11 @@
 
 import { useForm } from 'react-hook-form'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Send, AlertCircle, CheckCircle, Copy, Check, ExternalLink, ClipboardList, MessageSquare, Search, Tag } from 'lucide-react'
-import { useState } from 'react'
+import { Send, AlertCircle, CheckCircle, Copy, Check, ExternalLink, ClipboardList, MessageSquare, Search, Tag, Loader2, Sparkles } from 'lucide-react'
+import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { WA_NUMBER } from '@/lib/constants'
-
 import { calculateEstimatedPrice } from '@/lib/pricing-logic'
-import { useEffect } from 'react'
 import { toast } from 'sonner'
 
 const serviceOptions = [
@@ -19,12 +17,6 @@ const serviceOptions = [
   { value: 'Coding / Website', label: '💻 Coding / Website' },
   { value: 'Joki Tugas (Resume/Laporan)', label: '📄 Joki Tugas (Resume/Laporan)' },
   { value: 'Lainnya', label: '🔖 Lainnya' },
-]
-
-const steps = [
-  { icon: ClipboardList, label: 'Isi Form' },
-  { icon: MessageSquare, label: 'Diskusi WA' },
-  { icon: CheckCircle, label: 'Selesai' }
 ]
 
 const levelOptions = [
@@ -92,7 +84,6 @@ export default function OrderForm({ isStandalone = false }) {
       const diffTime = Math.max(0, deadlineDate - now)
       const diffHours = Math.ceil(diffTime / (1000 * 60 * 60))
       
-      // Pemetaan ke kunci SERVICE_BASE_PRICES di lib/pricing-logic.js
       let mappedService = 'Lainnya'
       if (watchType.includes('Skripsi')) mappedService = 'Skripsi/Tesis'
       else if (watchType.includes('SPSS')) mappedService = 'Analisis Data SPSS'
@@ -132,11 +123,9 @@ export default function OrderForm({ isStandalone = false }) {
       const { error: dbError } = await supabase.from('orders').insert(orderPayload)
       if (dbError) throw dbError
 
-      // Hanya tampilkan sukses dan reset form jika insert DB berhasil
       setOrderResult({ code: orderCode, name })
       reset()
 
-      // Kirim ke WA (Buka tab baru)
       const message = encodeURIComponent(
         `Halo Jokitugasku! 👋\n\nSaya ingin order:\n\n` +
         `📌 *Nama:* ${name}\n` +
@@ -152,19 +141,14 @@ export default function OrderForm({ isStandalone = false }) {
       )
       window.open(`https://wa.me/${WA_NUMBER}?text=${message}`, '_blank')
 
-      // Broadcast ke grup WA Admin via API internal (Background task)
       fetch('/api/broadcast-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          orderData: orderPayload,
-          type: 'NEW_ORDER'
-        }),
-      }).catch(err => console.error('Broadcast failed:', err))
+        body: JSON.stringify({ orderData: orderPayload, type: 'NEW_ORDER' }),
+      }).catch(() => {})
 
     } catch (err) {
-      console.warn('Order submission error:', err.message)
-      toast.error('Gagal mengirim pesanan ke database. Silakan coba lagi.')
+      toast.error('Gagal mengirim pesanan. Silakan coba lagi.')
     }
   }
 
@@ -174,361 +158,234 @@ export default function OrderForm({ isStandalone = false }) {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  // Optimized styles for Mobile & Accessibility
   const inputClass = (hasError) =>
-    `w-full bg-white border-2 ${hasError ? 'border-red-400 focus:border-red-400' : 'border-gray-200 focus:border-blue-400'}
-     rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 text-sm
-     focus:outline-none focus:ring-2 focus:ring-blue-500/10
-     transition-all duration-200`
+    `w-full bg-white border-2 ${hasError ? 'border-red-400 focus:border-red-400' : 'border-slate-200 focus:border-blue-500'}
+     rounded-2xl px-5 py-4 text-slate-900 placeholder-slate-400 text-base md:text-sm
+     focus:outline-none focus:ring-4 focus:ring-blue-500/5
+     transition-all duration-200 shadow-sm`
 
   return (
-    <section id="order-form" className={`${isStandalone ? 'py-0 bg-transparent' : 'py-24 bg-gray-50'} relative overflow-hidden`}>
-      {!isStandalone && <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-200 to-transparent" />}
-
-      <div className="relative max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
+    <section 
+      id="order-form" 
+      className={`${isStandalone ? 'py-0 bg-transparent' : 'py-20 bg-slate-50'} relative overflow-hidden`}
+    >
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         {!isStandalone && (
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-80px' }}
-            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <span className="section-badge">Form Order</span>
-            <h2 className="section-title">Pesan Sekarang, Mudah & Cepat</h2>
-            <p className="section-sub">
-              Isi form dan kami langsung hubungimu via WhatsApp.
-            </p>
+            <span className="section-badge mb-4">Form Order</span>
+            <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Pesan Cepat Lewat Web</h2>
+            <p className="text-slate-500 mt-4 max-w-lg mx-auto">Isi detail tugasmu dan tim kami akan segera menghubungimu via WhatsApp.</p>
           </motion.div>
         )}
 
-        {/* Step indicator */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="flex items-center justify-center gap-0 mb-10"
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white rounded-[2.5rem] p-6 sm:p-10 border border-slate-200 shadow-2xl shadow-slate-900/5"
         >
-          {steps.map((step, i) => {
-            const Icon = step.icon
-            return (
-              <div key={i} className="flex items-center">
-                <div className="flex flex-col items-center gap-1.5">
-                  <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-sm shadow-blue-500/30">
-                    <Icon size={16} />
-                  </div>
-                  <span className="text-xs font-semibold text-gray-700">{step.label}</span>
-                  <span className="text-xs text-gray-400 hidden sm:block">{step.desc}</span>
-                </div>
-                {i < steps.length - 1 && (
-                  <div className="w-12 sm:w-20 h-px bg-gray-200 mx-2 mb-6" />
-                )}
-              </div>
-            )
-          })}
-        </motion.div>
-
-        {/* Form Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-60px' }}
-          transition={{ duration: 0.6, delay: 0.15 }}
-        >
-          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-8 md:p-10">
-
-            {/* Success State */}
-            <AnimatePresence>
-              {orderResult && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="mb-8 p-6 bg-green-50 border border-green-200 rounded-2xl"
-                >
-                  <div className="flex items-center gap-2 text-green-700 font-semibold mb-2">
-                    <CheckCircle size={18} />
-                    Order terkirim ke WhatsApp, {orderResult.name}!
-                  </div>
-                  <p className="text-green-700/80 text-sm mb-4">
-                    Simpan kode ini untuk melacak progress tugasmu:
-                  </p>
-                  <div className="flex items-center gap-3 bg-white border-2 border-green-200 rounded-xl px-4 py-3">
-                    <code className="font-mono font-bold text-gray-900 text-base flex-1 tracking-wider">
-                      {orderResult.code}
-                    </code>
-                    <button
-                      onClick={copyCode}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium transition-colors"
-                    >
-                      {copied ? <><Check size={12} />Copied!</> : <><Copy size={12} />Copy</>}
-                    </button>
-                  </div>
-                  <a
-                    href={`/tracking?code=${orderResult.code}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 mt-4 text-blue-600 hover:text-blue-700 text-sm font-medium"
-                  >
-                    <ExternalLink size={14} />
-                    Cek progress order di sini
-                  </a>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <form id="order-form-el" onSubmit={handleSubmit(onSubmit)} noValidate>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
-
-                {/* Nama */}
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="f-name" className="text-sm font-semibold text-gray-700">
-                    Nama Lengkap <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    id="f-name"
-                    type="text"
-                    autoComplete="name"
-                    placeholder="Contoh: Budi Santoso"
-                    className={inputClass(errors.name)}
-                    {...register('name', { required: 'Nama wajib diisi' })}
-                  />
-                  {errors.name && (
-                    <span className="text-red-500 text-xs flex items-center gap-1">
-                      <AlertCircle size={12} /> {errors.name.message}
-                    </span>
-                  )}
-                </div>
-
-                {/* Phone */}
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="f-phone" className="text-sm font-semibold text-gray-700">
-                    No. WhatsApp <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    id="f-phone"
-                    type="tel"
-                    autoComplete="tel"
-                    placeholder="08xxxxxxxxxx"
-                    className={inputClass(errors.phone)}
-                    {...register('phone', {
-                      required: 'Nomor HP wajib diisi',
-                      pattern: { value: /^[0-9]{10,15}$/, message: 'Format nomor tidak valid' },
-                    })}
-                  />
-                  {errors.phone && (
-                    <span className="text-red-500 text-xs flex items-center gap-1">
-                      <AlertCircle size={12} /> {errors.phone.message}
-                    </span>
-                  )}
-                </div>
-
-                {/* Email */}
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="f-email" className="text-sm font-semibold text-gray-700">
-                    Email <span className="text-gray-400 text-[10px] font-medium">(Optional untuk struk)</span>
-                  </label>
-                  <input
-                    id="f-email"
-                    type="email"
-                    autoComplete="email"
-                    placeholder="nama@email.com"
-                    className={inputClass(errors.email)}
-                    {...register('email', {
-                      pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Format email tidak valid' },
-                    })}
-                  />
-                  {errors.email && (
-                    <span className="text-red-500 text-xs flex items-center gap-1">
-                      <AlertCircle size={12} /> {errors.email.message}
-                    </span>
-                  )}
-                </div>
-
-                {/* Service Type */}
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="f-type" className="text-sm font-semibold text-gray-700">
-                    Jenis Layanan <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    id="f-type"
-                    className={`${inputClass(errors.type)} bg-white`}
-                    {...register('type', { required: 'Pilih jenis layanan' })}
-                  >
-                    <option value="">-- Pilih Layanan --</option>
-                    {serviceOptions.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
-                  {errors.type && (
-                    <span className="text-red-500 text-xs flex items-center gap-1">
-                      <AlertCircle size={12} /> {errors.type.message}
-                    </span>
-                  )}
-                </div>
-
-                {/* Level Pendidikan */}
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="f-level" className="text-sm font-semibold text-gray-700">
-                    Tingkat Pendidikan <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    id="f-level"
-                    className={`${inputClass(errors.level)} bg-white`}
-                    {...register('level', { required: 'Pilih tingkat pendidikan' })}
-                  >
-                    {levelOptions.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Deadline */}
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="f-deadline" className="text-sm font-semibold text-gray-700">
-                    Deadline <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    id="f-deadline"
-                    type="datetime-local"
-                    className={`${inputClass(errors.deadline)} [color-scheme:light]`}
-                    {...register('deadline', { required: 'Deadline wajib diisi untuk estimasi harga' })}
-                  />
-                  {errors.deadline && (
-                    <span className="text-red-500 text-xs flex items-center gap-1">
-                      <AlertCircle size={12} /> {errors.deadline.message}
-                    </span>
-                  )}
-                </div>
-
-                {/* Referral Code */}
-                <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <label htmlFor="f-referral" className="text-sm font-semibold text-gray-700">
-                    Kode Promo / Referral <span className="text-gray-400 text-[10px] font-medium">(Optional)</span>
-                  </label>
-                  <div className="relative">
+          <AnimatePresence mode="wait">
+            {!orderResult ? (
+              <motion.form
+                key="form"
+                onSubmit={handleSubmit(onSubmit)}
+                className="space-y-6"
+                noValidate
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {/* Nama Lengkap */}
+                  <div className="flex flex-col gap-2">
+                    <label htmlFor="f-name" className="text-sm font-black text-slate-700 uppercase tracking-wider ml-1">
+                      Nama Lengkap <span className="text-rose-500">*</span>
+                    </label>
                     <input
-                      id="f-referral"
+                      id="f-name"
                       type="text"
-                      placeholder="Contoh: DISKON10"
-                      className={`${inputClass(false)} uppercase font-bold`}
-                      {...register('referral')}
+                      placeholder="Masukkan nama Anda"
+                      className={inputClass(errors.name)}
+                      {...register('name', { required: 'Nama wajib diisi' })}
                     />
-                    <Tag className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                    {errors.name && <span className="text-xs font-bold text-rose-500 flex items-center gap-1 mt-1"><AlertCircle size={12}/> {errors.name.message}</span>}
+                  </div>
+
+                  {/* Nomor WhatsApp */}
+                  <div className="flex flex-col gap-2">
+                    <label htmlFor="f-phone" className="text-sm font-black text-slate-700 uppercase tracking-wider ml-1">
+                      Nomor HP/WA <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      id="f-phone"
+                      type="tel"
+                      inputMode="numeric"
+                      placeholder="Contoh: 0812345..."
+                      className={inputClass(errors.phone)}
+                      {...register('phone', { 
+                        required: 'Nomor WA wajib diisi',
+                        pattern: { value: /^[0-9+]{8,15}$/, message: 'Nomor tidak valid' }
+                      })}
+                    />
+                    {errors.phone && <span className="text-xs font-bold text-rose-500 flex items-center gap-1 mt-1"><AlertCircle size={12}/> {errors.phone.message}</span>}
+                  </div>
+
+                  {/* Jenis Layanan */}
+                  <div className="flex flex-col gap-2">
+                    <label htmlFor="f-service" className="text-sm font-black text-slate-700 uppercase tracking-wider ml-1">
+                      Jenis Layanan <span className="text-rose-500">*</span>
+                    </label>
+                    <select id="f-service" className={inputClass(false)} {...register('type')}>
+                      {serviceOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                    </select>
+                  </div>
+
+                  {/* Pendidikan */}
+                  <div className="flex flex-col gap-2">
+                    <label htmlFor="f-level" className="text-sm font-black text-slate-700 uppercase tracking-wider ml-1">
+                      Tingkat Pendidikan <span className="text-rose-500">*</span>
+                    </label>
+                    <select id="f-level" className={inputClass(false)} {...register('level')}>
+                      {levelOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                    </select>
+                  </div>
+
+                  {/* Deskripsi Tugas */}
+                  <div className="flex flex-col gap-2 sm:col-span-2">
+                    <label htmlFor="f-desc" className="text-sm font-black text-slate-700 uppercase tracking-wider ml-1">
+                      Deskripsi Tugas <span className="text-rose-500">*</span>
+                    </label>
+                    <textarea
+                      id="f-desc"
+                      placeholder="Jelaskan detail tugas Anda secara singkat..."
+                      rows={4}
+                      className={inputClass(errors.desc)}
+                      {...register('desc', { required: 'Deskripsi wajib diisi' })}
+                    />
+                    {errors.desc && <span className="text-xs font-bold text-rose-500 flex items-center gap-1 mt-1"><AlertCircle size={12}/> {errors.desc.message}</span>}
+                  </div>
+
+                  {/* Deadline */}
+                  <div className="flex flex-col gap-2">
+                    <label htmlFor="f-deadline" className="text-sm font-black text-slate-700 uppercase tracking-wider ml-1">
+                      Batas Waktu (Deadline)
+                    </label>
+                    <input
+                      id="f-deadline"
+                      type="datetime-local"
+                      className={inputClass(false)}
+                      {...register('deadline')}
+                    />
+                  </div>
+
+                  {/* Promo Code */}
+                  <div className="flex flex-col gap-2">
+                    <label htmlFor="f-referral" className="text-sm font-black text-slate-700 uppercase tracking-wider ml-1">
+                      Kode Promo / Referral
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="f-referral"
+                        type="text"
+                        placeholder="Contoh: MAHASISWA"
+                        className={`${inputClass(false)} uppercase font-black tracking-widest`}
+                        {...register('referral')}
+                      />
+                      <Tag className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pricing Summary - Mobile Friendly */}
+                <div className="p-6 bg-slate-50 rounded-3xl border border-slate-200 mt-8">
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-sm font-bold text-slate-500 uppercase tracking-widest">Estimasi Biaya</span>
+                    <span className="text-[10px] font-black bg-white px-3 py-1 rounded-full border border-slate-200 text-slate-400">PREVIEW</span>
                   </div>
                   
-                  {/* Visualisasi Promo Tersedia */}
-                  {dynamicPromos && Object.keys(dynamicPromos).length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider self-center mr-1">Promo Aktif:</span>
-                      {Object.entries(dynamicPromos).map(([code, data]) => (
-                        <button
-                          key={code}
-                          type="button"
-                          onClick={() => {
-                            const input = document.getElementById('f-referral');
-                            if (input) {
-                              input.value = code;
-                              // Triger react-hook-form update
-                              input.dispatchEvent(new Event('input', { bubbles: true }));
-                            }
-                            toast.success(`Kode ${code} diterapkan!`);
-                          }}
-                          className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-100 rounded-lg text-[10px] font-black transition-all flex items-center gap-1.5 group"
-                        >
-                          <span className="group-hover:scale-110 transition-transform">{code}</span>
-                          <span className="opacity-60 font-medium">({data.label})</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Estimasi Harga (Dinamis) */}
-                <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <label className="text-sm font-semibold text-gray-700">Rincian Estimasi Biaya</label>
-                  <div className="bg-blue-50 border-2 border-blue-100 rounded-2xl p-4 sm:p-6">
-                    <div className="space-y-2 mb-4">
+                  <div className="space-y-2">
+                    {estimatedPrice.discount > 0 && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-slate-500 font-medium">Harga Layanan</span>
-                        <span className="text-slate-700 font-bold">
-                          {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(estimatedPrice.original)}
-                        </span>
+                        <span className="text-slate-400">Harga Normal</span>
+                        <span className="line-through text-slate-400">Rp {estimatedPrice.original.toLocaleString()}</span>
                       </div>
-                      {estimatedPrice.urgencyLabel && (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-orange-600 font-medium">Layanan: {estimatedPrice.urgencyLabel}</span>
-                          <span className="text-orange-600 font-bold">
-                            Included
-                          </span>
-                        </div>
-                      )}
-                      {estimatedPrice.discount > 0 && (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-emerald-600 font-medium">Potongan Promo</span>
-                          <span className="text-emerald-600 font-bold">
-                            -{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(estimatedPrice.discount)}
-                          </span>
-                        </div>
-                      )}
+                    )}
+                    <div className="flex justify-between items-end">
+                      <span className="text-base font-bold text-slate-900">Total Pembayaran</span>
+                      <span className="text-3xl font-black text-blue-600 tabular-nums">
+                        Rp {estimatedPrice.total.toLocaleString()}
+                      </span>
                     </div>
-                    <div className="pt-4 border-t border-blue-200 flex items-center justify-between">
-                      <div>
-                        <div className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">Total Estimasi</div>
-                        <div className="text-2xl sm:text-3xl font-black text-blue-700">
-                          {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(estimatedPrice.total)}
-                        </div>
+                    {estimatedPrice.promoLabel && (
+                      <div className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mt-2 flex items-center gap-1.5">
+                        <Sparkles size={12} /> {estimatedPrice.promoLabel} Aktif!
                       </div>
-                      <div className="px-3 py-1.5 bg-white rounded-xl border border-blue-200 shadow-sm">
-                         <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Smart Pricing ✨</span>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Description */}
-                <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <label htmlFor="f-desc" className="text-sm font-semibold text-gray-700">
-                    Deskripsi Tugas <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    id="f-desc"
-                    rows={4}
-                    placeholder="Jelaskan detail tugasmu: topik, jumlah halaman, panduan khusus, dll..."
-                    className={inputClass(errors.desc)}
-                    {...register('desc', { required: 'Deskripsi tugas wajib diisi' })}
-                  />
-                  {errors.desc && (
-                    <span className="text-red-500 text-xs flex items-center gap-1">
-                      <AlertCircle size={12} /> {errors.desc.message}
-                    </span>
+                {/* Submit Button - Large Tap Target */}
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full py-5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-sm uppercase tracking-[0.2em] shadow-xl shadow-blue-200 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3"
+                >
+                  {isSubmitting ? (
+                    <><Loader2 size={20} className="animate-spin" /> Memproses...</>
+                  ) : (
+                    <><Send size={20} /> Kirim ke WhatsApp Sekarang</>
                   )}
+                </button>
+
+                <p className="text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  🛡️ 100% Privasi & Data Terlindungi
+                </p>
+              </motion.form>
+            ) : (
+              <motion.div
+                key="success"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center py-8"
+              >
+                <div className="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-emerald-100">
+                  <CheckCircle size={40} />
+                </div>
+                <h3 className="text-2xl font-black text-slate-900 mb-2">Terima Kasih, {orderResult.name}!</h3>
+                <p className="text-slate-500 mb-8">Pesananmu sudah masuk antrian. Klik tombol di bawah jika WhatsApp tidak terbuka otomatis.</p>
+                
+                <div className="p-6 bg-slate-50 rounded-3xl border border-slate-200 mb-8 max-w-sm mx-auto">
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Kode Tiket Anda</div>
+                  <div className="flex items-center justify-center gap-3">
+                    <span className="text-xl font-black text-slate-900 font-mono tracking-wider">{orderResult.code}</span>
+                    <button 
+                      onClick={copyCode}
+                      className="p-2 hover:bg-white rounded-lg transition-colors text-blue-600"
+                    >
+                      {copied ? <Check size={20} /> : <Copy size={20} />}
+                    </button>
+                  </div>
                 </div>
 
-              </div>
-
-              <button
-                type="submit"
-                id="btn-order-submit"
-                disabled={isSubmitting}
-                className="w-full flex items-center justify-center gap-3 py-4 px-6 rounded-xl font-bold text-white text-base
-                           bg-[#25D366] hover:bg-[#22c55e]
-                           shadow-lg shadow-green-500/20 hover:shadow-green-500/30
-                           transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {isSubmitting ? (
-                  <svg className="animate-spin" width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                    <circle cx={12} cy={12} r={10} strokeOpacity={0.25} />
-                    <path d="M12 2a10 10 0 0 1 10 10" />
-                  </svg>
-                ) : (
-                  <Send size={18} />
-                )}
-                {isSubmitting ? 'Mengirim...' : 'Kirim via WhatsApp'}
-              </button>
-            </form>
-          </div>
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={() => window.location.href = '/tracking'}
+                    className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"
+                  >
+                    <Search size={18} /> Lacak Status Tiket
+                  </button>
+                  <button
+                    onClick={() => setOrderResult(null)}
+                    className="w-full py-4 bg-white text-slate-500 border border-slate-200 rounded-2xl font-black text-sm uppercase tracking-widest active:scale-95 transition-all"
+                  >
+                    Buat Order Baru
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       </div>
     </section>
