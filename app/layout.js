@@ -2,14 +2,14 @@ import './globals.css'
 import ClientLayout from '@/components/layout/ClientLayout'
 import { Plus_Jakarta_Sans, Poppins } from 'next/font/google'
 
-const plusJakarta = Plus_Jakarta_Sans({ 
-  subsets: ['latin'], 
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ['latin'],
   variable: '--font-plus-jakarta',
   display: 'swap',
 })
 
-const poppins = Poppins({ 
-  subsets: ['latin'], 
+const poppins = Poppins({
+  subsets: ['latin'],
   weight: ['400', '500', '600', '700', '800', '900'],
   variable: '--font-poppins',
   display: 'swap',
@@ -31,7 +31,7 @@ export const metadata = {
         url: '/hero.png',
         width: 1200,
         height: 630,
-        alt: 'Jokitugasku Preview',
+        alt: 'Jokitugaku Preview',
       },
     ],
   },
