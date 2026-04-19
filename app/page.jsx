@@ -1,18 +1,20 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import { motion, AnimatePresence } from 'framer-motion'
 import Hero from '@/components/sections/Hero'
-import Services from '@/components/sections/Services'
-import About from '@/components/sections/About'
-import HowItWorks from '@/components/sections/HowItWorks'
-import Testimonials from '@/components/sections/Testimonials'
-import Pricing from '@/components/sections/Pricing'
-import Promo from '@/components/sections/Promo'
-import OrderForm from '@/components/ui/OrderForm'
-import FAQ from '@/components/sections/FAQ'
-import CTA from '@/components/sections/CTA'
-import { ArrowLeft } from 'lucide-react'
+
+// Dynamic imports untuk komponen di bawah fold agar JS tidak dimuat sekaligus
+const Services = dynamic(() => import('@/components/sections/Services'), { ssr: true })
+const About = dynamic(() => import('@/components/sections/About'), { ssr: true })
+const HowItWorks = dynamic(() => import('@/components/sections/HowItWorks'), { ssr: true })
+const Testimonials = dynamic(() => import('@/components/sections/Testimonials'), { ssr: true })
+const Pricing = dynamic(() => import('@/components/sections/Pricing'), { ssr: true })
+const Promo = dynamic(() => import('@/components/sections/Promo'), { ssr: true })
+const FAQ = dynamic(() => import('@/components/sections/FAQ'), { ssr: true })
+const CTA = dynamic(() => import('@/components/sections/CTA'), { ssr: true })
+const OrderForm = dynamic(() => import('@/components/ui/OrderForm'), { ssr: false })
 
 export default function HomePage() {
   const [showOrderForm, setShowOrderForm] = useState(false)
@@ -37,12 +39,6 @@ export default function HomePage() {
 
   const handleStartOrder = () => {
     window.location.hash = 'order-form'
-  }
-
-  const handleBackToHome = () => {
-    window.location.hash = ''
-    // Jika user hapus hash, pastikan state update
-    setShowOrderForm(false)
   }
 
   return (
@@ -75,7 +71,7 @@ export default function HomePage() {
             transition={{ duration: 0.5, type: 'spring', damping: 25 }}
             className="pt-28 pb-20 bg-slate-50 min-h-screen relative overflow-hidden"
           >
-             {/* Background Decor sama seperti yang di /order tadi agar tetap premium */}
+             {/* Background Decor */}
             <div className="absolute top-0 left-0 right-0 h-[500px] bg-gradient-to-b from-blue-50 to-transparent -z-10" />
             
             <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative">
