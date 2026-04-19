@@ -141,7 +141,7 @@ export default function HowItWorks() {
           className="text-center mt-16"
         >
           <a
-            href="#order-form"
+            href="/#order-form"
             className="btn-primary inline-flex"
           >
             Mulai Sekarang →

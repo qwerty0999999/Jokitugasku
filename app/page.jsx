@@ -24,7 +24,10 @@ export default function HomePage() {
     const handleHashChange = () => {
       if (window.location.hash === '#order-form') {
         setShowOrderForm(true)
-        window.scrollTo({ top: 0, behavior: 'instant' })
+        // Scroll ke paling atas agar form terlihat penuh
+        setTimeout(() => {
+          window.scrollTo({ top: 0, behavior: 'smooth' })
+        }, 100)
       } else {
         setShowOrderForm(false)
       }

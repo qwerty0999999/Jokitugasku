@@ -153,9 +153,7 @@ export default function Services() {
           <p className="text-slate-400 text-sm font-medium">
             Tidak yakin layanan apa yang kamu butuhkan?{' '}
             <a
-              href={`https://wa.me/6289524894059?text=Halo!%20Saya%20mau%20konsultasi%20dulu.`}
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/#order-form"
               className="text-blue-600 font-bold hover:underline underline-offset-2"
             >
               Konsultasi gratis →

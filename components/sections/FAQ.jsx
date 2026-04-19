@@ -160,10 +160,7 @@ export default function FAQ() {
             <h3 className="font-black text-lg mb-2">Tidak menemukan jawaban yang kamu cari?</h3>
             <p className="text-slate-400 text-sm mb-5">Tim kami siap membantu kamu 24/7 via WhatsApp</p>
             <a
-              href="https://wa.me/6289524894059?text=Halo%20Jokitugasku%21%20Saya%20punya%20pertanyaan."
-              target="_blank"
-              rel="noopener noreferrer"
-              id="faq-wa-btn"
+              href="/#order-form"
               className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-2xl font-bold text-sm bg-white text-slate-900 hover:bg-blue-50 hover:-translate-y-0.5 transition-all duration-300 shadow-lg shadow-black/20"
             >
               <MessageCircle size={17} />

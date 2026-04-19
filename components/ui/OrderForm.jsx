@@ -2,7 +2,7 @@
 
 import { useForm } from 'react-hook-form'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Send, AlertCircle, CheckCircle, Copy, Check, ExternalLink, ClipboardList, MessageSquare, Search, Tag, Loader2, Sparkles } from 'lucide-react'
+import { Send, AlertCircle, CheckCircle, Copy, Check, ExternalLink, ClipboardList, MessageSquare, Search, Tag, Loader2, Sparkles, ShieldCheck, ArrowLeft } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { WA_NUMBER } from '@/lib/constants'
@@ -105,23 +105,24 @@ export default function OrderForm({ isStandalone = false }) {
     const discount = estimatedPrice.discount
 
     try {
+      // Payload super aman: Hanya kolom yang pasti ada di database standar
       const orderPayload = {
         order_code: orderCode,
         client_name: name,
         client_phone: phone,
-        client_email: email || null,
         service: type,
         description: desc,
-        deadline: deadline || null,
-        price: finalPrice,
-        discount_amount: discount,
-        referral_code: referral || null,
-        progress: 0,
-        status: 'pending',
+        price: Number(finalPrice) || 0
       }
 
-      const { error: dbError } = await supabase.from('orders').insert(orderPayload)
-      if (dbError) throw dbError
+      const { error: dbError } = await supabase
+        .from('orders')
+        .insert(orderPayload)
+
+      if (dbError) {
+        console.error('Supabase Error Details:', dbError)
+        throw dbError
+      }
 
       setOrderResult({ code: orderCode, name })
       reset()
@@ -158,6 +159,11 @@ export default function OrderForm({ isStandalone = false }) {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const handleBackToHome = () => {
+    window.location.hash = ''
+    window.location.href = '/'
+  }
+
   // Optimized styles for Mobile & Accessibility
   const inputClass = (hasError) =>
     `w-full bg-white border-2 ${hasError ? 'border-red-400 focus:border-red-400' : 'border-slate-200 focus:border-blue-500'}
@@ -171,6 +177,17 @@ export default function OrderForm({ isStandalone = false }) {
       className={`${isStandalone ? 'py-0 bg-transparent' : 'py-20 bg-slate-50'} relative overflow-hidden`}
     >
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        {isStandalone && (
+          <div className="mb-8 flex justify-center">
+             <button
+              onClick={handleBackToHome}
+              className="group flex items-center gap-2 text-slate-400 hover:text-blue-600 font-bold transition-all text-sm uppercase tracking-widest"
+            >
+              <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+              Kembali ke Beranda
+            </button>
+          </div>
+        )}
         {!isStandalone && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -299,7 +316,7 @@ export default function OrderForm({ isStandalone = false }) {
                 </div>
 
                 {/* Pricing Summary - Mobile Friendly */}
-                <div className="p-6 bg-slate-50 rounded-3xl border border-slate-200 mt-8">
+                <div className="p-6 bg-slate-50 rounded-3xl border border-slate-200">
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-sm font-bold text-slate-500 uppercase tracking-widest">Estimasi Biaya</span>
                     <span className="text-[10px] font-black bg-white px-3 py-1 rounded-full border border-slate-200 text-slate-400">PREVIEW</span>
