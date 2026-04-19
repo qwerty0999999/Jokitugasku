@@ -13,7 +13,7 @@ const defaultPrices = {
   custom: { price: 'Custom', unit: 'sesuai kebutuhan' }
 }
 
-export default function Pricing() {
+export default function Pricing({ onStartOrder }) {
   const [prices, setPrices] = useState(defaultPrices)
 
   useEffect(() => {
@@ -216,8 +216,9 @@ export default function Pricing() {
                     {tier.cta}
                   </a>
                 ) : (
-                  <a
-                    href={tier.ctaHref}
+                  <button
+                    type="button"
+                    onClick={onStartOrder}
                     id={`btn-${tier.id}`}
                     className={`w-full text-center py-3.5 px-6 rounded-2xl font-bold transition-all duration-300 text-sm ${
                       tier.featured
@@ -226,7 +227,7 @@ export default function Pricing() {
                     }`}
                   >
                     {tier.cta}
-                  </a>
+                  </button>
                 )}
               </div>
             </motion.div>

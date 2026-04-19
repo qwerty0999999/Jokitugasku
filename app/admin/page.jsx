@@ -10,7 +10,7 @@ import {
   RotateCcw, Search, ChevronDown, Save, Star, TrendingUp,
   Package, Activity, LayoutDashboard, Users, Settings,
   DollarSign, Check, X, Plus, Edit3, Shield, AlertCircle,
-  Hash, User, Briefcase, Key, Trash2, MessageCircle, FileUp, Download, Receipt, CalendarClock, ExternalLink
+  Hash, User, Briefcase, Key, Trash2, MessageCircle, FileUp, Download, Receipt, CalendarClock, ExternalLink, Tag, Percent
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
@@ -1416,6 +1416,217 @@ function WASettingsUI({ token, setToken, groupId, setGroupId, onSave, loading })
   )
 }
 
+// ── MANAJEMEN KODE PROMO (SUPER ADMIN) ──────────────────────
+function PromoManagementUI() {
+  const [loading, setLoading] = useState(false)
+  const [promos, setPromos] = useState({})
+  const [newPromo, setNewPromo] = useState({ code: '', type: 'percentage', value: '', label: '', description: '' })
+  const [editingKey, setEditingKey] = useState(null)
+
+  const fetchPromos = useCallback(async () => {
+    setLoading(true)
+    const { data } = await supabase.from('system_settings').select('*').eq('key', 'PROMO_CODES_DB').single()
+    if (data?.value) {
+      setPromos(JSON.parse(data.value))
+    }
+    setLoading(false)
+  }, [])
+
+  useEffect(() => { fetchPromos() }, [fetchPromos])
+
+  const handleSave = async (updatedPromos) => {
+    setLoading(true)
+    const { error } = await supabase.from('system_settings').upsert([
+      { key: 'PROMO_CODES_DB', value: JSON.stringify(updatedPromos) }
+    ])
+    if (!error) {
+      setPromos(updatedPromos)
+      toast.success('Daftar promo berhasil diperbarui!')
+      setEditingKey(null)
+      setNewPromo({ code: '', type: 'percentage', value: '', label: '', description: '' })
+    } else {
+      toast.error('Gagal menyimpan promo.')
+    }
+    setLoading(false)
+  }
+
+  const addPromo = (e) => {
+    e.preventDefault()
+    if (!newPromo.code || !newPromo.value || !newPromo.label) return toast.error('Lengkapi semua data!')
+    
+    const code = newPromo.code.toUpperCase().trim()
+    
+    let updated = { ...promos }
+    if (editingKey && editingKey !== code) {
+      delete updated[editingKey]
+    }
+
+    updated[code] = {
+      type: newPromo.type,
+      value: Number(newPromo.value) / (newPromo.type === 'percentage' ? 100 : 1),
+      label: newPromo.label,
+      description: newPromo.description || 'Klaim potongan ini sekarang juga! Berlaku untuk semua jenis layanan tugas.'
+    }
+    
+    handleSave(updated)
+  }
+
+  const startEdit = (code, data) => {
+    setEditingKey(code)
+    setNewPromo({
+      code: code,
+      type: data.type,
+      value: data.type === 'percentage' ? data.value * 100 : data.value,
+      label: data.label,
+      description: data.description || ''
+    })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const removePromo = (code) => {
+    if (!confirm(`Hapus promo ${code}?`)) return
+    const updated = { ...promos }
+    delete updated[code]
+    handleSave(updated)
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-2xl p-6 md:p-8 border border-slate-200 shadow-sm">
+        <div className="flex items-center gap-4 mb-8">
+          <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+            <DollarSign size={28} />
+          </div>
+          <div>
+            <h3 className="text-xl font-black text-slate-900">Manajemen Kode Promo</h3>
+            <p className="text-sm text-slate-500">Buat dan kelola kode diskon untuk pelanggan</p>
+          </div>
+        </div>
+
+        {/* Form Tambah/Edit Promo */}
+        <form onSubmit={addPromo} className="space-y-4 mb-10 p-6 bg-slate-50 rounded-2xl border border-slate-200 relative">
+          {editingKey && (
+            <div className="absolute -top-3 right-6 px-3 py-1 bg-amber-500 text-white text-[10px] font-black rounded-full shadow-sm">
+              SEDANG MENGEDIT: {editingKey}
+            </div>
+          )}
+          
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-400 uppercase">Kode Promo</label>
+              <input 
+                value={newPromo.code}
+                onChange={e => setNewPromo({...newPromo, code: e.target.value})}
+                placeholder="CONTOH: HEMAT20"
+                className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm font-black uppercase outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-400 uppercase">Tipe</label>
+              <select 
+                value={newPromo.type}
+                onChange={e => setNewPromo({...newPromo, type: e.target.value})}
+                className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+              >
+                <option value="percentage">Persentase (%)</option>
+                <option value="fixed">Potongan Tetap (Rp)</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-400 uppercase">Nilai ({newPromo.type === 'percentage' ? '%' : 'Rp'})</label>
+              <input 
+                type="number"
+                value={newPromo.value}
+                onChange={e => setNewPromo({...newPromo, value: e.target.value})}
+                placeholder={newPromo.type === 'percentage' ? "10" : "25000"}
+                className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm font-black outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-400 uppercase">Label Tampilan</label>
+              <input 
+                value={newPromo.label}
+                onChange={e => setNewPromo({...newPromo, label: e.target.value})}
+                placeholder="Diskon 10%"
+                className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-slate-400 uppercase">Deskripsi Promo (Teks di Landing Page)</label>
+            <textarea 
+              value={newPromo.description}
+              onChange={e => setNewPromo({...newPromo, description: e.target.value})}
+              placeholder="Masukkan kalimat promosi untuk pelanggan..."
+              rows={2}
+              className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+            />
+          </div>
+
+          <div className="flex items-center gap-2 pt-2">
+            <button 
+              type="submit"
+              disabled={loading}
+              className={`flex-1 py-3.5 ${editingKey ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-200' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'} text-white rounded-xl text-sm font-bold shadow-lg transition-all active:scale-95 disabled:opacity-50`}
+            >
+              {loading ? <Loader2 size={18} className="animate-spin mx-auto" /> : (editingKey ? 'SIMPAN PERUBAHAN' : 'TAMBAH PROMO BARU')}
+            </button>
+            {editingKey && (
+              <button 
+                type="button"
+                onClick={() => {
+                  setEditingKey(null)
+                  setNewPromo({ code: '', type: 'percentage', value: '', label: '', description: '' })
+                }}
+                className="p-3.5 bg-slate-200 text-slate-600 rounded-xl hover:bg-slate-300 transition-all"
+              >
+                <X size={18} />
+              </button>
+            )}
+          </div>
+        </form>
+
+        {/* Daftar Promo Aktif */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Object.entries(promos).map(([code, data]) => (
+            <div key={code} className="p-5 bg-white border border-slate-200 rounded-2xl flex items-center justify-between group hover:border-indigo-300 transition-all shadow-sm hover:shadow-md">
+              <div>
+                <div className="text-sm font-black text-slate-900 flex items-center gap-2">
+                  {code}
+                  {data.type === 'percentage' ? <Percent size={12} className="text-indigo-500" /> : <Tag size={12} className="text-emerald-500" />}
+                </div>
+                <div className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">{data.label}</div>
+              </div>
+              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                <button 
+                  onClick={() => startEdit(code, data)}
+                  className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
+                  title="Edit Promo"
+                >
+                  <Edit3 size={18} />
+                </button>
+                <button 
+                  onClick={() => removePromo(code)}
+                  className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                  title="Hapus Promo"
+                >
+                  <Trash2 size={18} />
+                </button>
+              </div>
+            </div>
+          ))}
+          {Object.keys(promos).length === 0 && (
+            <div className="col-span-full py-10 text-center text-slate-400 font-medium italic bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+              Belum ada kode promo aktif.
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── KOMPONEN KALENDER DEADLINE ──────────────────────────────
 function DeadlineCalendar({ orders, onSelectOrder }) {
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -2172,6 +2383,7 @@ export default function AdminPage() {
     ]
     if (isSuperAdmin) {
       items.push({ id: 'pricing-settings', label: 'Harga Landing', icon: DollarSign })
+      items.push({ id: 'promo-codes', label: 'Promo', icon: Tag })
       items.push({ id: 'team', label: 'Tim', icon: Users })
       items.push({ id: 'wa-settings', label: 'Pengaturan WA', icon: MessageCircle })
       items.push({ id: 'ai-logs', label: 'AI Monitor', icon: Activity })
@@ -2645,6 +2857,13 @@ export default function AdminPage() {
                 </motion.div>
               )}
 
+              {/* TAB: PROMO CODES */}
+              {activeTab === 'promo-codes' && isSuperAdmin && (
+                <motion.div key="promo-codes" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <PromoManagementUI />
+                </motion.div>
+              )}
+
               {/* TAB: SETTINGS */}
               {activeTab === 'settings' && (
                 <motion.div key="settings" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -2656,22 +2875,7 @@ export default function AdminPage() {
           )}
         </div>
 
-        {/* ── MOBILE BOTTOM NAV ───────────────────────────────── */}
-        <nav className="lg:hidden fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 px-6 py-3 flex items-center justify-between z-50 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.05)]">
-          {navItems.map(item => (
-            <button 
-              key={item.id} 
-              onClick={() => { setActiveTab(item.id); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
-              className={`flex flex-col items-center gap-1 transition-all relative ${activeTab === item.id ? 'text-blue-600' : 'text-slate-400'}`}
-            >
-              <item.icon size={20} strokeWidth={activeTab === item.id ? 2.5 : 2} />
-              <span className="text-[10px] font-bold">{item.label}</span>
-              {item.badge > 0 && (
-                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-500 rounded-full border border-white"></span>
-              )}
-            </button>
-          ))}
-        </nav>
+        {/* ── MOBILE BOTTOM NAV DIHAPUS ───────────────────────── */}
       </main>
 
       {/* ── MOBILE SIDEBAR OVERLAY ──────────────────────────── */}

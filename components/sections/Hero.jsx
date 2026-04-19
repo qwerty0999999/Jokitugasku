@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
-import { ArrowRight, MessageCircle, ShieldCheck, Clock, Star } from 'lucide-react'
+import { ArrowRight, MessageCircle, ShieldCheck, Clock, Star, Tag } from 'lucide-react'
 import { WA_NUMBER } from '@/lib/constants'
+import { supabase } from '@/lib/supabase'
 
 function useCountUp(target, duration = 1800, start = false) {
   const [count, setCount] = useState(0)
@@ -79,9 +80,26 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: 'easeOut' } },
 }
 
-export default function Hero() {
+export default function Hero({ onStartOrder }) {
   const [statsStarted, setStatsStarted] = useState(false)
+  const [activePromo, setActivePromo] = useState(null)
   const statsRef = useRef(null)
+
+  useEffect(() => {
+    const fetchPromo = async () => {
+      try {
+        const { data } = await supabase.from('system_settings').select('*').eq('key', 'PROMO_CODES_DB').single()
+        if (data?.value) {
+          const promos = JSON.parse(data.value)
+          const keys = Object.keys(promos)
+          if (keys.length > 0) {
+            setActivePromo({ code: keys[0], ...promos[keys[0]] })
+          }
+        }
+      } catch (e) {}
+    }
+    fetchPromo()
+  }, [])
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -155,10 +173,14 @@ export default function Hero() {
 
             {/* CTA Buttons */}
             <motion.div variants={itemVariants} className="flex flex-wrap gap-3 mb-10">
-              <a href="#order-form" id="btn-mulai" className="btn-primary shine">
+              <button 
+                onClick={onStartOrder}
+                id="btn-mulai" 
+                className="btn-primary shine"
+              >
                 Mulai Order Sekarang
                 <ArrowRight size={17} />
-              </a>
+              </button>
               <a
                 href={`https://wa.me/${WA_NUMBER}?text=Halo!%20Saya%20mau%20konsultasi%20gratis.`}
                 target="_blank"

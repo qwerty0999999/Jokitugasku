@@ -2,7 +2,7 @@
 
 import { useForm } from 'react-hook-form'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Send, AlertCircle, CheckCircle, Copy, Check, ExternalLink, ClipboardList, MessageSquare, Search } from 'lucide-react'
+import { Send, AlertCircle, CheckCircle, Copy, Check, ExternalLink, ClipboardList, MessageSquare, Search, Tag } from 'lucide-react'
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { WA_NUMBER } from '@/lib/constants'
@@ -44,10 +44,26 @@ const generateOrderCode = () => {
   return `JTK-${year}${month}${day}-${random}`
 }
 
-export default function OrderForm() {
+export default function OrderForm({ isStandalone = false }) {
   const [orderResult, setOrderResult] = useState(null)
   const [copied, setCopied] = useState(false)
   const [estimatedPrice, setEstimatedPrice] = useState({ original: 0, discount: 0, total: 0 })
+  const [dynamicPromos, setDynamicPromos] = useState(null)
+
+  // Fetch dynamic promos on mount
+  useEffect(() => {
+    const fetchPromos = async () => {
+      try {
+        const { data } = await supabase.from('system_settings').select('*').eq('key', 'PROMO_CODES_DB').single()
+        if (data?.value) {
+          setDynamicPromos(JSON.parse(data.value))
+        }
+      } catch (err) {
+        console.warn('Failed to fetch dynamic promos:', err)
+      }
+    }
+    fetchPromos()
+  }, [])
 
   const {
     register,
@@ -84,12 +100,12 @@ export default function OrderForm() {
       else if (watchType.includes('PPT')) mappedService = 'PowerPoint Premium'
       else if (watchType.includes('Coding')) mappedService = 'Pemrograman/Coding'
       
-      const priceResult = calculateEstimatedPrice(mappedService, watchLevel, diffHours, watchReferral)
+      const priceResult = calculateEstimatedPrice(mappedService, watchLevel, diffHours, watchReferral, dynamicPromos)
       setEstimatedPrice(priceResult)
     } else {
       setEstimatedPrice({ original: 0, discount: 0, total: 0 })
     }
-  }, [watchType, watchLevel, watchDeadline, watchReferral])
+  }, [watchType, watchLevel, watchDeadline, watchReferral, dynamicPromos])
 
   const onSubmit = async (data) => {
     const { name, phone, email, type, level, desc, deadline, referral } = data
@@ -165,24 +181,26 @@ export default function OrderForm() {
      transition-all duration-200`
 
   return (
-    <section id="order-form" className="py-24 bg-gray-50 relative overflow-hidden">
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-200 to-transparent" />
+    <section id="order-form" className={`${isStandalone ? 'py-0 bg-transparent' : 'py-24 bg-gray-50'} relative overflow-hidden`}>
+      {!isStandalone && <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-200 to-transparent" />}
 
       <div className="relative max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-12"
-        >
-          <span className="section-badge">Form Order</span>
-          <h2 className="section-title">Pesan Sekarang, Mudah & Cepat</h2>
-          <p className="section-sub">
-            Isi form dan kami langsung hubungimu via WhatsApp.
-          </p>
-        </motion.div>
+        {!isStandalone && (
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-80px' }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-12"
+          >
+            <span className="section-badge">Form Order</span>
+            <h2 className="section-title">Pesan Sekarang, Mudah & Cepat</h2>
+            <p className="section-sub">
+              Isi form dan kami langsung hubungimu via WhatsApp.
+            </p>
+          </motion.div>
+        )}
 
         {/* Step indicator */}
         <motion.div
@@ -385,17 +403,46 @@ export default function OrderForm() {
                 </div>
 
                 {/* Referral Code */}
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5 sm:col-span-2">
                   <label htmlFor="f-referral" className="text-sm font-semibold text-gray-700">
                     Kode Promo / Referral <span className="text-gray-400 text-[10px] font-medium">(Optional)</span>
                   </label>
-                  <input
-                    id="f-referral"
-                    type="text"
-                    placeholder="Contoh: DISKON10"
-                    className={inputClass(false)}
-                    {...register('referral')}
-                  />
+                  <div className="relative">
+                    <input
+                      id="f-referral"
+                      type="text"
+                      placeholder="Contoh: DISKON10"
+                      className={`${inputClass(false)} uppercase font-bold`}
+                      {...register('referral')}
+                    />
+                    <Tag className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                  </div>
+                  
+                  {/* Visualisasi Promo Tersedia */}
+                  {dynamicPromos && Object.keys(dynamicPromos).length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider self-center mr-1">Promo Aktif:</span>
+                      {Object.entries(dynamicPromos).map(([code, data]) => (
+                        <button
+                          key={code}
+                          type="button"
+                          onClick={() => {
+                            const input = document.getElementById('f-referral');
+                            if (input) {
+                              input.value = code;
+                              // Triger react-hook-form update
+                              input.dispatchEvent(new Event('input', { bubbles: true }));
+                            }
+                            toast.success(`Kode ${code} diterapkan!`);
+                          }}
+                          className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-100 rounded-lg text-[10px] font-black transition-all flex items-center gap-1.5 group"
+                        >
+                          <span className="group-hover:scale-110 transition-transform">{code}</span>
+                          <span className="opacity-60 font-medium">({data.label})</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Estimasi Harga (Dinamis) */}
